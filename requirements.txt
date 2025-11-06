@@ -1,0 +1,6 @@
+openai==1.46.0
+pinecone-client==5.0.1
+pinecone-text==0.7.0
+numpy==1.26.4
+tqdm==4.66.5
+python-dotenv==1.0.1
