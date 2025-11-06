@@ -1,0 +1,52 @@
+# Document Processing Pipeline Overview
+
+This document demonstrates various text patterns for processing.
+
+## Introduction
+
+Document processing transforms raw text into structured, searchable embeddings. The pipeline handles extraction, cleaning, chunking, and storage.
+
+### Why This Matters
+
+Traditional keyword search fails when users query "machine learning algorithms" but documents say "ML techniques". Semantic search bridges this gap.
+
+## Key Components
+
+The pipeline consists of five stages:
+- Extraction: Pull text from PDFs, TXT, and Markdown files
+- Cleaning: Remove artifacts and normalize Unicode characters
+- Chunking: Split documents into semantic units
+- Embedding: Convert text to dense vectors
+- Storage: Index vectors in Pinecone for fast retrieval
+
+## Code Example
+
+Here's a simple extraction function:
+
+```python
+def extract_text(filepath):
+    """Extract text from supported formats."""
+    if filepath.endswith('.pdf'):
+        return extract_pdf(filepath)
+    return open(filepath).read()
+```
+
+## Trade-offs and Limitations
+
+No solution is perfect. Fixed-size chunking is fast but may split sentences. Semantic chunking preserves meaning but costs more compute time.
+
+### When NOT to Use This
+
+If you have fewer than 10 documents, manual processing may suffice. If documents exceed 100K tokens, consider long-context models instead.
+
+## Common Failures
+
+1. Unicode errors: Smart quotes become � characters
+2. Memory issues: 500MB PDFs crash the extractor
+3. Bad chunks: Code snippets split mid-function
+4. Duplicates: Reprocessing creates redundant vectors
+5. Metadata bloat: Huge metadata exceeds Pinecone limits
+
+## Next Steps
+
+Start with small test documents. Validate chunking quality before scaling to production.
