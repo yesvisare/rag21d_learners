@@ -1,0 +1,27 @@
+{
+  "$schema": "https://railway.app/railway.schema.json",
+  "name": "m3-2-cloud-deploy",
+  "variables": {
+    "PLATFORM": "railway",
+    "ADMIN_SECRET": "${{RAILWAY_ADMIN_SECRET}}",
+    "RAILWAY_ENVIRONMENT": "${{RAILWAY_ENVIRONMENT}}"
+  },
+  "services": [
+    {
+      "name": "web",
+      "source": {
+        "repo": "REPLACE_WITH_YOUR_REPO_URL"
+      },
+      "build": {
+        "builder": "NIXPACKS",
+        "buildCommand": "pip install -r requirements.txt"
+      },
+      "deploy": {
+        "startCommand": "uvicorn m3_2_deploy:app --host=0.0.0.0 --port=${PORT}",
+        "healthcheckPath": "/health",
+        "healthcheckTimeout": 30,
+        "restartPolicyType": "ON_FAILURE"
+      }
+    }
+  ]
+}
