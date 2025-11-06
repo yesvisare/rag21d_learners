@@ -1,0 +1,54 @@
+# =============================================================================
+# M1.1 Vector Databases - Python Dependencies
+# =============================================================================
+# Pinned versions tested and known to work together
+# Install: pip install -r requirements.txt
+# =============================================================================
+
+# OpenAI SDK for embeddings generation
+# Used for: text-embedding-3-small model (1536 dimensions)
+openai==1.46.0
+
+# Pinecone client for vector database operations
+# Used for: creating indexes, upserting vectors, semantic search queries
+pinecone-client==5.0.1
+
+# ChromaDB for alternative/comparison demonstrations
+# Used for: in-process vector storage (optional for learning comparisons)
+chromadb==0.5.5
+
+# NumPy for numerical operations and cosine similarity calculations
+# Used for: demonstrating similarity math, vector operations
+numpy==1.26.4
+
+# Python-dotenv for environment variable management
+# Used for: loading API keys from .env file
+python-dotenv==1.0.1
+
+# TQDM for progress bars during batch operations
+# Used for: showing progress when upserting large datasets
+tqdm==4.66.5
+
+# =============================================================================
+# Installation Instructions
+# =============================================================================
+# 1. Create virtual environment (recommended):
+#    python -m venv venv
+#    source venv/bin/activate  # On Windows: venv\Scripts\activate
+#
+# 2. Install dependencies:
+#    pip install -r requirements.txt
+#
+# 3. Verify installation:
+#    python -c "import openai, pinecone, chromadb, numpy; print('✓ All dependencies installed')"
+# =============================================================================
+
+# =============================================================================
+# Optional Development Dependencies (not required for core functionality)
+# =============================================================================
+# Uncomment if you want to run notebooks or development tools:
+# jupyter==1.0.0
+# ipykernel==6.29.0
+# matplotlib==3.8.0  # For visualizations in notebooks
+# pandas==2.1.0      # For data manipulation
+# =============================================================================
