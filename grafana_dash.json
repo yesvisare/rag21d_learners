@@ -1,0 +1,248 @@
+{
+  "dashboard": {
+    "title": "RAG Production Monitoring Dashboard",
+    "tags": ["rag", "production", "monitoring"],
+    "timezone": "browser",
+    "editable": true,
+    "panels": [
+      {
+        "id": 1,
+        "title": "Query Latency (p50, p95, p99)",
+        "type": "graph",
+        "gridPos": {"x": 0, "y": 0, "w": 12, "h": 8},
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.50, sum(rate(rag_query_latency_seconds_bucket[5m])) by (le, operation))",
+            "legendFormat": "p50 - {{operation}}",
+            "refId": "A"
+          },
+          {
+            "expr": "histogram_quantile(0.95, sum(rate(rag_query_latency_seconds_bucket[5m])) by (le, operation))",
+            "legendFormat": "p95 - {{operation}}",
+            "refId": "B"
+          },
+          {
+            "expr": "histogram_quantile(0.99, sum(rate(rag_query_latency_seconds_bucket[5m])) by (le, operation))",
+            "legendFormat": "p99 - {{operation}}",
+            "refId": "C"
+          }
+        ],
+        "yaxes": [
+          {"format": "s", "label": "Latency"},
+          {"format": "short"}
+        ]
+      },
+      {
+        "id": 2,
+        "title": "Request Rate & Error Rate",
+        "type": "graph",
+        "gridPos": {"x": 12, "y": 0, "w": 12, "h": 8},
+        "targets": [
+          {
+            "expr": "sum(rate(rag_requests_total{status=\"success\"}[5m])) by (endpoint)",
+            "legendFormat": "Success - {{endpoint}}",
+            "refId": "A"
+          },
+          {
+            "expr": "sum(rate(rag_requests_total{status=\"error\"}[5m])) by (endpoint)",
+            "legendFormat": "Error - {{endpoint}}",
+            "refId": "B"
+          }
+        ],
+        "yaxes": [
+          {"format": "reqps", "label": "Requests/sec"},
+          {"format": "short"}
+        ]
+      },
+      {
+        "id": 3,
+        "title": "Token Usage (Input vs Output)",
+        "type": "graph",
+        "gridPos": {"x": 0, "y": 8, "w": 12, "h": 8},
+        "targets": [
+          {
+            "expr": "sum(rate(rag_input_tokens_sum[5m])) by (model)",
+            "legendFormat": "Input Tokens - {{model}}",
+            "refId": "A"
+          },
+          {
+            "expr": "sum(rate(rag_output_tokens_sum[5m])) by (model)",
+            "legendFormat": "Output Tokens - {{model}}",
+            "refId": "B"
+          }
+        ],
+        "yaxes": [
+          {"format": "short", "label": "Tokens/sec"},
+          {"format": "short"}
+        ]
+      },
+      {
+        "id": 4,
+        "title": "Cost per Query & Total Spend",
+        "type": "graph",
+        "gridPos": {"x": 12, "y": 8, "w": 12, "h": 8},
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, sum(rate(rag_query_cost_usd_bucket[5m])) by (le, model))",
+            "legendFormat": "p95 Cost - {{model}}",
+            "refId": "A"
+          },
+          {
+            "expr": "sum(rate(rag_total_cost_usd[5m])) by (model) * 3600",
+            "legendFormat": "Hourly Spend - {{model}}",
+            "refId": "B"
+          }
+        ],
+        "yaxes": [
+          {"format": "currencyUSD", "label": "Cost"},
+          {"format": "short"}
+        ]
+      },
+      {
+        "id": 5,
+        "title": "Cache Hit Rate %",
+        "type": "gauge",
+        "gridPos": {"x": 0, "y": 16, "w": 6, "h": 6},
+        "targets": [
+          {
+            "expr": "rag_cache_hit_rate * 100",
+            "refId": "A"
+          }
+        ],
+        "options": {
+          "showThresholdLabels": false,
+          "showThresholdMarkers": true
+        },
+        "fieldConfig": {
+          "defaults": {
+            "thresholds": {
+              "steps": [
+                {"value": 0, "color": "red"},
+                {"value": 30, "color": "yellow"},
+                {"value": 60, "color": "green"}
+              ]
+            },
+            "unit": "percent",
+            "min": 0,
+            "max": 100
+          }
+        }
+      },
+      {
+        "id": 6,
+        "title": "Error Rate %",
+        "type": "stat",
+        "gridPos": {"x": 6, "y": 16, "w": 6, "h": 6},
+        "targets": [
+          {
+            "expr": "sum(rate(rag_requests_total{status=\"error\"}[5m])) / sum(rate(rag_requests_total[5m])) * 100",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "thresholds": {
+              "steps": [
+                {"value": 0, "color": "green"},
+                {"value": 1, "color": "yellow"},
+                {"value": 5, "color": "red"}
+              ]
+            },
+            "unit": "percent"
+          }
+        }
+      },
+      {
+        "id": 7,
+        "title": "Active Requests",
+        "type": "stat",
+        "gridPos": {"x": 12, "y": 16, "w": 6, "h": 6},
+        "targets": [
+          {
+            "expr": "rag_active_requests",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "thresholds": {
+              "steps": [
+                {"value": 0, "color": "green"},
+                {"value": 50, "color": "yellow"},
+                {"value": 100, "color": "red"}
+              ]
+            },
+            "unit": "short"
+          }
+        }
+      },
+      {
+        "id": 8,
+        "title": "Rate Limit Remaining",
+        "type": "gauge",
+        "gridPos": {"x": 18, "y": 16, "w": 6, "h": 6},
+        "targets": [
+          {
+            "expr": "rag_rate_limit_remaining",
+            "legendFormat": "{{provider}}",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "thresholds": {
+              "steps": [
+                {"value": 0, "color": "red"},
+                {"value": 100, "color": "yellow"},
+                {"value": 1000, "color": "green"}
+              ]
+            },
+            "unit": "short"
+          }
+        }
+      },
+      {
+        "id": 9,
+        "title": "Response Relevance Score",
+        "type": "graph",
+        "gridPos": {"x": 0, "y": 22, "w": 12, "h": 8},
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.50, sum(rate(rag_relevance_score_bucket[5m])) by (le))",
+            "legendFormat": "p50 Relevance",
+            "refId": "A"
+          },
+          {
+            "expr": "histogram_quantile(0.95, sum(rate(rag_relevance_score_bucket[5m])) by (le))",
+            "legendFormat": "p95 Relevance",
+            "refId": "B"
+          }
+        ],
+        "yaxes": [
+          {"format": "percentunit", "label": "Relevance Score", "min": 0, "max": 1},
+          {"format": "short"}
+        ]
+      },
+      {
+        "id": 10,
+        "title": "Error Breakdown by Type",
+        "type": "piechart",
+        "gridPos": {"x": 12, "y": 22, "w": 12, "h": 8},
+        "targets": [
+          {
+            "expr": "sum(increase(rag_errors_total[1h])) by (error_type)",
+            "legendFormat": "{{error_type}}",
+            "refId": "A"
+          }
+        ]
+      }
+    ],
+    "refresh": "10s",
+    "schemaVersion": 27,
+    "version": 1,
+    "time": {
+      "from": "now-1h",
+      "to": "now"
+    }
+  }
+}
