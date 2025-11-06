@@ -1,0 +1,41 @@
+{
+  "documents": [
+    {
+      "content": "Our return policy allows customers to return items within 30 days of purchase with original receipt. Exceptions include personalized items, final sale products, and items marked as non-returnable. Returns are processed within 5-7 business days after we receive the item.",
+      "score": 0.95,
+      "id": "doc_001"
+    },
+    {
+      "content": "Standard shipping takes 3-5 business days within the continental United States. Express shipping is available for 1-2 day delivery at additional cost. International shipping typically takes 7-14 business days depending on destination. All orders over $50 qualify for free standard shipping.",
+      "score": 0.92,
+      "id": "doc_002"
+    },
+    {
+      "content": "We accept all major credit cards (Visa, MasterCard, American Express, Discover), PayPal, Apple Pay, and Google Pay. For orders over $500, we also offer payment plans through Affirm with 0% APR for qualified customers. Gift cards can be used for any purchase.",
+      "score": 0.88,
+      "id": "doc_003"
+    }
+  ],
+  "test_queries": [
+    {
+      "question": "What is your return policy?",
+      "expected_answer": "30-day returns with receipt, except personalized/final sale items",
+      "complexity": "simple"
+    },
+    {
+      "question": "How long does shipping take?",
+      "expected_answer": "Standard 3-5 days, express 1-2 days, international 7-14 days",
+      "complexity": "simple"
+    },
+    {
+      "question": "Can I return personalized items?",
+      "expected_answer": "No, personalized items are excluded from returns",
+      "complexity": "simple"
+    },
+    {
+      "question": "Compare your standard vs express shipping options and help me decide which is best for a gift.",
+      "expected_answer": "Detailed comparison with recommendation based on timing needs",
+      "complexity": "complex"
+    }
+  ]
+}
