@@ -1,6 +1,26 @@
-# M3.2 — Cloud Deployment Guide (Railway/Render)
+# M3.2 — Cloud Deployment (Railway/Render)
 
-**One-page deployment guide for getting FastAPI apps live on Railway or Render.**
+## Purpose
+Learn to deploy FastAPI applications to modern Platform-as-a-Service (PaaS) providers with honest assessments of capabilities, limitations, and costs. This module demystifies cloud deployment by providing practical, battle-tested configurations for Railway and Render.
+
+## Concepts Covered
+- **PaaS Deployment:** Zero-config deployment workflows for Railway and Render
+- **Health Checks:** Implementing health and readiness endpoints for production monitoring
+- **Environment Configuration:** Managing secrets, environment variables, and platform-specific configs
+- **Cold Starts & Cost Analysis:** Understanding free tier limitations and scaling economics
+- **Platform Comparison:** Decision frameworks for choosing between Railway, Render, Fly.io, VPS, and AWS/GCP
+- **Production Readiness:** Troubleshooting common deployment failures and performance issues
+
+## After Completing This Module
+You will be able to:
+- Deploy a FastAPI app to Railway or Render in under 10 minutes
+- Configure health checks, environment variables, and platform-specific settings
+- Make informed platform decisions based on budget, traffic, and compliance requirements
+- Troubleshoot common deployment issues (cold starts, OOM errors, connection failures)
+- Calculate real costs and understand trade-offs between free and paid tiers
+
+## Context in Track
+This module bridges local development (M1-M2) and production deployment. It focuses on managed PaaS platforms that handle infrastructure complexity, allowing you to focus on application code. For containerized deployments, see M3.1 (Docker). For enterprise-scale infrastructure, see later modules on AWS/GCP.
 
 ---
 
@@ -14,15 +34,24 @@
 
 ### Files in This Module
 ```
-m3_2_deploy.py              # FastAPI app with health endpoints
-requirements.txt            # Dependencies
-Procfile                    # Render start command
-service.json                # Railway service config (optional)
-render.yaml                 # Render infrastructure-as-code
-railway.json                # Railway template (optional)
-.env.example                # Environment variables template
-tests_deploy_sanity.py      # Smoke tests
-M3_2_Cloud_Deployment.ipynb # Full deployment walkthrough
+app.py                              # FastAPI app with health endpoints
+requirements.txt                    # Dependencies (fastapi, uvicorn, pytest, httpx)
+.env.example                        # Environment variables template
+.gitignore                          # Git ignore patterns
+LICENSE                             # MIT License
+README.md                           # This file
+notebooks/
+  └── M3_2_Cloud_Deployment.ipynb  # Full deployment walkthrough
+tests/
+  ├── __init__.py                   # Tests module
+  └── test_deploy_sanity.py         # Smoke tests (run with pytest)
+platform_config/
+  ├── Procfile                      # Render start command
+  ├── render.yaml                   # Render infrastructure-as-code
+  ├── railway.json                  # Railway template
+  └── service.json                  # Railway service config
+scripts/
+  └── run_local.ps1                 # Local development script
 ```
 
 ---
@@ -45,7 +74,7 @@ git push origin main
    - **Region:** Oregon (or closest)
    - **Branch:** `main`
    - **Build Command:** `pip install -r requirements.txt`
-   - **Start Command:** `uvicorn m3_2_deploy:app --host=0.0.0.0 --port=$PORT`
+   - **Start Command:** `uvicorn app:app --host=0.0.0.0 --port=$PORT`
 
 ### Step 3: Set Environment Variables
 In Render dashboard → Environment:
@@ -208,7 +237,8 @@ cp .env.example .env
 
 ### 3. Run App
 ```bash
-python m3_2_deploy.py
+powershell ./scripts/run_local.ps1
+# OR: python app.py
 ```
 
 ### 4. Test Endpoints
@@ -225,21 +255,17 @@ curl http://localhost:8000/env-check
 
 ### 5. Run Tests
 ```bash
-python tests_deploy_sanity.py
+pytest
 ```
 
 **Expected output:**
 ```
-🧪 Running M3.2 Deployment Sanity Tests
+============================= test session starts ==============================
+collected 5 items
 
-✅ Health check passed
-✅ Root endpoint passed
-✅ Readiness check passed
-✅ Environment check passed
-✅ ADMIN_SECRET is set
-✅ PORT is valid: 8000
+tests/test_deploy_sanity.py .....                                        [100%]
 
-✅ All sanity tests passed!
+============================== 5 passed in 0.XX s ===============================
 ```
 
 ---
@@ -254,7 +280,7 @@ python tests_deploy_sanity.py
 
 **Fix:**
 ```python
-# m3_2_deploy.py
+# app.py
 port = int(os.getenv("PORT", "8000"))
 uvicorn.run(app, host="0.0.0.0", port=port)
 ```
@@ -335,15 +361,16 @@ curl https://your-app.url/env-check
 - Status: https://status.render.com
 
 ### This Module
-- Full walkthrough: `M3_2_Cloud_Deployment.ipynb`
-- Tests: `tests_deploy_sanity.py`
-- App code: `m3_2_deploy.py`
+- Full walkthrough: `notebooks/M3_2_Cloud_Deployment.ipynb`
+- Tests: `tests/test_deploy_sanity.py`
+- App code: `app.py`
+- Platform configs: `platform_config/`
 
 ---
 
 ## License
 
-MIT License - modify and use freely for your projects.
+MIT License - See [LICENSE](LICENSE) file for details.
 
 ---
 

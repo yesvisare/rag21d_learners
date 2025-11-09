@@ -7,10 +7,7 @@ import os
 import sys
 from fastapi.testclient import TestClient
 
-# Add current directory to path
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-
-from m3_2_deploy import app
+from app import app
 
 client = TestClient(app)
 
@@ -75,6 +72,8 @@ def test_environment_variables():
 
 if __name__ == "__main__":
     print("\n🧪 Running M3.2 Deployment Sanity Tests\n")
+    print("Note: Tests are best run with pytest from the root directory:")
+    print("  $ pytest\n")
 
     try:
         test_health_endpoint()

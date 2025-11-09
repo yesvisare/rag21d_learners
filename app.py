@@ -121,7 +121,7 @@ if __name__ == "__main__":
     # Production: Use gunicorn with uvicorn workers
     # Dev: Direct uvicorn
     uvicorn.run(
-        "m3_2_deploy:app",
+        "app:app",
         host=host,
         port=port,
         log_level="info",
