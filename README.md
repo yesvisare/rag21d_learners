@@ -68,8 +68,129 @@ powershell ./scripts/run_web_ui.ps1
 
 Locust outputs:
 - **Console**: Real-time metrics (RPS, p50/p95/p99 latency, error rate)
-- **CSV**: `--csv=results/test_name` exports detailed statistics
-- **HTML**: `--html=results/report.html` generates visual report
+- **CSV**: Exported to `results/` directory (e.g., `results/smoke_stats.csv`)
+- **HTML**: Visual reports in `results/` (e.g., `results/smoke.html`)
+
+---
+
+## Configuration via .env
+
+All test parameters can be configured via environment variables in `.env`:
+
+```bash
+# Target host (REQUIRED - verify before running!)
+LOADTEST_HOST=http://localhost:8000
+
+# Smoke Test (health check)
+SMOKE_USERS=10
+SMOKE_SPAWN_RATE=2
+SMOKE_RUNTIME=2m
+
+# Load Test (realistic traffic)
+LOAD_USERS=100
+LOAD_SPAWN_RATE=10
+LOAD_RUNTIME=10m
+
+# Stress Test (find breaking point)
+STRESS_USERS=1000
+STRESS_SPAWN_RATE=50
+STRESS_RUNTIME=15m
+
+# Spike Test (sudden surge)
+SPIKE_USERS=500
+SPIKE_SPAWN_RATE=500
+SPIKE_RUNTIME=5m
+
+# Soak Test (memory leak detection)
+SOAK_USERS=50
+SOAK_SPAWN_RATE=5
+SOAK_RUNTIME=4h
+```
+
+**Override host per-test**:
+```powershell
+# Test against different host
+powershell ./scripts/run_load_test.ps1 -HOST http://127.0.0.1:9000
+
+# Test against staging
+powershell ./scripts/run_smoke_test.ps1 -HOST https://staging-api.example.com
+```
+
+---
+
+## Artifacts
+
+All test scripts automatically generate artifacts in the `results/` directory:
+
+| Test | CSV Files | HTML Report |
+|------|-----------|-------------|
+| Smoke | `results/smoke_stats.csv`, `results/smoke_stats_history.csv`, `results/smoke_failures.csv` | `results/smoke.html` |
+| Load | `results/load_stats.csv`, `results/load_stats_history.csv`, `results/load_failures.csv` | `results/load.html` |
+| Stress | `results/stress_stats.csv`, `results/stress_stats_history.csv`, `results/stress_failures.csv` | `results/stress.html` |
+| Spike | `results/spike_stats.csv`, `results/spike_stats_history.csv`, `results/spike_failures.csv` | `results/spike.html` |
+| Soak | `results/soak_stats.csv`, `results/soak_stats_history.csv`, `results/soak_failures.csv` | `results/soak.html` |
+
+**CSV Files**:
+- `*_stats.csv`: Aggregated statistics (avg, median, p95, p99, RPS)
+- `*_stats_history.csv`: Time-series data for plotting trends
+- `*_failures.csv`: Detailed error logs
+
+**HTML Reports**:
+- Interactive charts of RPS, response times, and error rates
+- Downloadable for sharing with team
+
+**Note**: The `results/` directory is in `.gitignore` to prevent committing test data.
+
+---
+
+## Safety & Guardrails
+
+### ⚠️ CRITICAL: Verify Target Before Running
+
+**NEVER load test production systems without explicit approval.**
+
+Load testing generates significant traffic that can:
+- Overwhelm production systems
+- Trigger rate limits
+- Incur unexpected costs (API usage, infrastructure scaling)
+- Impact real users
+
+### Pre-Flight Checklist
+
+Before running ANY load test:
+
+1. ✅ **Verify HOST**: Check that `LOADTEST_HOST` points to the correct environment
+   ```bash
+   # Windows
+   echo $env:LOADTEST_HOST
+
+   # Linux/Mac
+   echo $LOADTEST_HOST
+   ```
+
+2. ✅ **Confirm environment**: Ensure you're targeting staging/test, NOT production
+
+3. ✅ **Get approval**: For production testing, obtain written approval from:
+   - Engineering lead
+   - Infrastructure team
+   - Product owner (if customer-facing)
+
+4. ✅ **Start small**: Always run smoke test first before load/stress tests
+
+5. ✅ **Monitor costs**: Watch for unexpected API charges or infrastructure scaling
+
+### Safe Testing Practices
+
+- **Local development**: Use `http://localhost:8000` for initial testing
+- **Staging environment**: Use dedicated staging URL (e.g., `https://staging.example.com`)
+- **Production**: Only with approval, during off-peak hours, with monitoring
+
+### Emergency Stop
+
+If test is causing issues:
+1. Press `Ctrl+C` in terminal (kills Locust immediately)
+2. Check application logs for errors
+3. Verify system recovery before re-running
 
 ---
 
@@ -87,6 +208,7 @@ All scenarios are pre-configured in `locustfile.py` with helper scripts in `scri
 
 ### Running Specific Scenarios
 
+**Default (uses .env configuration)**:
 ```powershell
 # Smoke test
 powershell ./scripts/run_smoke_test.ps1
@@ -107,7 +229,16 @@ powershell ./scripts/run_soak_test.ps1
 powershell ./scripts/run_web_ui.ps1
 ```
 
-**Note**: Scripts use `http://localhost:8000` as the default host. For production testing, edit the scripts or set `TARGET_URL` in `.env` and modify scripts to use it.
+**Override host per test**:
+```powershell
+# Test against different port
+powershell ./scripts/run_smoke_test.ps1 -HOST http://127.0.0.1:9000
+
+# Test against staging environment
+powershell ./scripts/run_load_test.ps1 -HOST https://staging-api.example.com
+```
+
+**Note**: Scripts read from `.env` with fallback to `http://localhost:8000`. Use `-HOST` parameter to override for a specific test run.
 
 ---
 

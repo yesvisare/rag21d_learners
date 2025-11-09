@@ -1,22 +1,30 @@
 """
 Basic tests for locustfile.py to ensure it's properly configured.
 
-Run with: python tests_locustfile.py
-Or with pytest: pytest tests_locustfile.py -v
+Run with: python tests/test_locustfile.py
+Or with pytest: pytest tests/test_locustfile.py -v
+Or pytest all: pytest -q
 """
 
 import sys
 import inspect
+import importlib
 
 
 def test_locustfile_imports():
-    """Test that locustfile.py can be imported without errors."""
+    """Test that locustfile.py can be imported without errors (zero-load sanity)."""
     try:
-        import locustfile
+        mod = importlib.import_module("locustfile")
+        # Verify HttpUser is accessible (from locust import)
+        assert hasattr(mod, 'HttpUser') or hasattr(mod, 'RAGUser'), \
+            "Neither HttpUser nor RAGUser found in locustfile"
         print("✅ locustfile.py imports successfully")
         return True
     except ImportError as e:
         print(f"❌ Failed to import locustfile.py: {e}")
+        return False
+    except AssertionError as e:
+        print(f"❌ {e}")
         return False
 
 
