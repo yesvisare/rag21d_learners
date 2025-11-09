@@ -2,6 +2,30 @@
 
 **TVH Framework v2.0 Enhanced Version**
 
+---
+
+## 🎓 Learning Arc
+
+**Purpose:**
+This module bridges course completion and career action. It provides honest assessments of what you gained (and didn't), realistic timelines for job searching, three curated learning paths with decision frameworks, and a 30-day action plan to turn skills into momentum.
+
+**Concepts Covered:**
+- Skills inventory (technical + soft skills from the course)
+- Knowledge gaps (model training, MLOps, advanced RAG, research topics)
+- Three learning paths: Framework Mastery (LangChain), RAG Specialization, Full-Stack AI
+- Decision cards (Benefits, Limitations, Cost, Use When, Avoid When)
+- Common post-course mistakes (tutorial hell, perfectionism, isolation)
+- Job search reality (3–6 month timelines, right-fit vs. stretch roles)
+- Production vs. course projects (legacy code, team constraints, maintenance)
+
+**After Completing:**
+You will have chosen a learning path that fits your goals, generated a personalized 30-day action plan, identified which communities to join, and set realistic expectations for your first AI role—avoiding the 5 mistakes that derail most learners.
+
+**Context in Track:**
+Final module (M4.4) wrapping the entire RAG course. Complements M4.3 (Portfolio Showcase) by translating completed projects into career strategy. Emphasizes honest self-assessment and strategic next steps over hype.
+
+---
+
 A comprehensive guide for what comes after completing the RAG course, featuring honest assessments, practical action plans, and decision frameworks for your AI engineering journey.
 
 ---
@@ -49,6 +73,26 @@ Interactive menu with options for:
 - Common mistakes to avoid
 - Job search reality check
 - Generate templates (CSV and Markdown)
+
+### CLI (Non-Interactive)
+
+For automation or quick template generation:
+
+**Generate skills matrix CSV:**
+```powershell
+./scripts/run_cli.ps1 -Skills
+```
+
+**Generate action plan template:**
+```powershell
+./scripts/run_cli.ps1 -Plan
+```
+
+**Or directly:**
+```bash
+python m4_4_planning_tools.py --generate-skills-csv
+python m4_4_planning_tools.py --generate-action-plan
+```
 
 ---
 
@@ -247,8 +291,14 @@ The CLI can generate two useful templates:
 
 Verify everything works:
 
+**PowerShell (Windows-first):**
+```powershell
+./scripts/run_tests.ps1
+```
+
+**Or directly with pytest:**
 ```bash
-python tests_plans.py
+pytest -q
 ```
 
 Tests include:
@@ -266,10 +316,15 @@ Tests include:
 rag21d_learners/
 ├── M4_4_Wrap_Up_and_Next_Steps.ipynb  # Main interactive notebook
 ├── m4_4_planning_tools.py              # CLI planning tool
+├── scripts/
+│   ├── run_tests.ps1                   # PowerShell test runner
+│   └── run_cli.ps1                     # PowerShell CLI wrapper
 ├── templates/
 │   ├── action_plan.md                  # 30-day plan template
 │   └── skills_matrix.csv               # Skills tracking spreadsheet
-├── tests_plans.py                      # Smoke tests
+├── tests/
+│   └── test_plans.py                   # Pytest smoke tests
+├── requirements.txt                    # Python dependencies
 └── README.md                           # This file
 ```
 

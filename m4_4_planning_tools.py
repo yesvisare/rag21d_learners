@@ -532,6 +532,24 @@ def generate_action_plan_file():
 
 
 if __name__ == "__main__":
+    import sys
+
+    # Support non-interactive CLI flags for automation
+    if len(sys.argv) > 1:
+        if sys.argv[1] == "--generate-skills-csv":
+            generate_skills_csv()
+            sys.exit(0)
+        elif sys.argv[1] == "--generate-action-plan":
+            generate_action_plan_file()
+            sys.exit(0)
+        else:
+            print(f"Unknown option: {sys.argv[1]}")
+            print("Available options:")
+            print("  --generate-skills-csv")
+            print("  --generate-action-plan")
+            sys.exit(1)
+
+    # Interactive mode (default)
     print("\n🎉 Welcome to M4.4 Course Wrap-up Planning Tools!")
     print("Your guide to next steps after completing the RAG course.\n")
     main_menu()
