@@ -5,7 +5,54 @@ Illustrative pricing models for vector database cost analysis.
 
 import numpy as np
 import pandas as pd
+import yaml
+from pathlib import Path
 from typing import Dict, Tuple
+
+# Pricing version identifier
+PRICING_VERSION = "pinecone_2025-11"
+
+
+def _load_pricing_config():
+    """
+    Load pricing configuration from YAML file.
+    Falls back to hardcoded defaults if file is missing.
+    """
+    # Try to find the config file relative to this module
+    config_path = Path(__file__).parents[3] / "configs" / "pricing" / f"{PRICING_VERSION}.yaml"
+
+    # Default pricing values (fallback)
+    defaults = {
+        'free_tier_vectors': 100_000,
+        'starter_cost': 70,
+        'starter_capacity': 1_000_000,
+        'standard_base': 280,
+        'standard_capacity': 1_000_000,
+        'queries_included': 10_000_000,
+        'cost_per_million_queries': 5
+    }
+
+    try:
+        if config_path.exists():
+            with open(config_path, 'r') as f:
+                config = yaml.safe_load(f)
+                return {
+                    'free_tier_vectors': config['tiers']['free']['vector_capacity'],
+                    'starter_cost': config['tiers']['starter']['monthly_cost'],
+                    'starter_capacity': config['tiers']['starter']['vector_capacity'],
+                    'standard_base': config['tiers']['standard']['base_cost_per_pod'],
+                    'standard_capacity': config['tiers']['standard']['vectors_per_pod'],
+                    'queries_included': config['queries']['included_monthly'],
+                    'cost_per_million_queries': config['queries']['cost_per_million_excess']
+                }
+    except Exception:
+        pass  # Fall back to defaults
+
+    return defaults
+
+
+# Load pricing configuration
+_PRICING = _load_pricing_config()
 
 
 class PineconeCostEstimator:
@@ -14,16 +61,14 @@ class PineconeCostEstimator:
     Pricing: Free tier = 100K vectors; Starter = $70/mo; Standard = $280/mo+
     """
 
-    # Illustrative pricing constants (USD/month)
-    FREE_TIER_VECTORS = 100_000
-    STARTER_POD_COST = 70
-    STARTER_POD_CAPACITY = 1_000_000  # Starter can handle up to 1M vectors
-    STANDARD_POD_BASE = 280
-    STANDARD_POD_CAPACITY = 1_000_000
-
-    # Query pricing (illustrative - typically bundled with pod costs)
-    QUERIES_INCLUDED = 10_000_000  # Monthly queries included
-    COST_PER_MILLION_QUERIES = 5   # After included quota
+    # Pricing constants loaded from YAML configuration
+    FREE_TIER_VECTORS = _PRICING['free_tier_vectors']
+    STARTER_POD_COST = _PRICING['starter_cost']
+    STARTER_POD_CAPACITY = _PRICING['starter_capacity']
+    STANDARD_POD_BASE = _PRICING['standard_base']
+    STANDARD_POD_CAPACITY = _PRICING['standard_capacity']
+    QUERIES_INCLUDED = _PRICING['queries_included']
+    COST_PER_MILLION_QUERIES = _PRICING['cost_per_million_queries']
 
     def __init__(self, vectors: int, dimensions: int = 1536, replicas: int = 1,
                  monthly_queries: int = 100_000):
@@ -257,37 +302,3 @@ class VectorDBComparison:
             })
 
         return pd.DataFrame(results)
-
-
-def main():
-    """Demo cost calculations."""
-    print("=== Pinecone Cost Estimator Demo ===\n")
-
-    # Scenario 1: Small app
-    small = PineconeCostEstimator(vectors=500_000, monthly_queries=100_000)
-    print(f"Small App (500K vectors):")
-    print(f"  Monthly Cost: ${small.estimate_monthly_cost()['total_monthly']:.2f}")
-    print(f"  Cost per Vector: ${small.cost_per_vector():.6f}\n")
-
-    # Scenario 2: Medium app with replicas
-    medium = PineconeCostEstimator(vectors=5_000_000, replicas=2)
-    print(f"Medium App (5M vectors, 2 replicas):")
-    print(f"  Monthly Cost: ${medium.estimate_monthly_cost()['total_monthly']:.2f}")
-    print(f"  Annual Projection: ${medium.annual_projection():.2f}\n")
-
-    # Provider comparison
-    print("=== Provider Comparison ===\n")
-    scenarios = [100_000, 500_000, 1_000_000, 5_000_000]
-    comparison = VectorDBComparison.generate_comparison_table(scenarios)
-    print(comparison.to_string(index=False))
-
-    # Break-even analysis
-    print("\n=== Break-Even Analysis ===")
-    estimator = PineconeCostEstimator(vectors=1_000_000)
-    qdrant_cost = VectorDBComparison.estimate_qdrant_cost(1_000_000, 100_000)['monthly_cost']
-    break_even = estimator.calculate_break_even(qdrant_cost)
-    print(f"Break-even vs Qdrant ($100/mo): ~{break_even:,} vectors")
-
-
-if __name__ == "__main__":
-    main()

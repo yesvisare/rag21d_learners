@@ -1,0 +1,47 @@
+# Pinecone Pricing Configuration
+# Version: pinecone_2025-11
+# Effective Date: 2025-11-01
+# Currency: USD
+# Rounding Policy: Standard mathematical rounding (0.5 rounds up)
+#
+# Note: These are illustrative pricing tiers for educational purposes.
+# Always verify current pricing at https://www.pinecone.io/pricing/
+
+version: "pinecone_2025-11"
+effective_date: "2025-11-01"
+currency: "USD"
+
+# Tier definitions
+tiers:
+  free:
+    name: "Free"
+    monthly_cost: 0
+    vector_capacity: 100000
+    description: "Serverless tier for development and testing"
+
+  starter:
+    name: "Starter"
+    monthly_cost: 70
+    vector_capacity: 1000000
+    pod_type: "Standard"
+    description: "Single standard pod for small production apps"
+
+  standard:
+    name: "Standard"
+    base_cost_per_pod: 280
+    vectors_per_pod: 1000000
+    description: "Multiple pods for production scale"
+
+# Query pricing
+queries:
+  included_monthly: 10000000  # 10M queries included
+  cost_per_million_excess: 5  # USD per million queries after included quota
+
+# Replica pricing
+replicas:
+  description: "Each replica incurs full pod cost"
+  cost_calculation: "base_pod_cost * (replicas - 1)"
+
+# Default embedding dimensions
+defaults:
+  embedding_dimensions: 1536  # OpenAI text-embedding-ada-002

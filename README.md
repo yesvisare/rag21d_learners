@@ -2,15 +2,37 @@
 
 **Cost Analysis, Alternatives & Migration Strategy for Vector Databases**
 
-This module provides cost estimation tools and decision frameworks for evaluating vector database providers beyond the Pinecone free tier.
+## Learning Arc
 
-## 📁 Contents
+This module is part of the RAG21D learning track, positioning you to make informed decisions about vector database providers at production scale. After implementing RAG systems in M1-M3, you now need to understand **total cost of ownership**, **alternative providers**, and **scaling economics**.
 
-- **`m4_2_cost_models.py`** - Cost estimator functions for Pinecone, Weaviate, Qdrant, Elasticsearch
-- **`M4_2_Beyond_Pinecone_Free_Tier.ipynb`** - Interactive walkthrough with 6 sections
-- **`requirements.txt`** - Dependencies (numpy, pandas)
-- **`tests_costs.py`** - Smoke tests for cost models
-- **`README.md`** - This file
+**Prerequisites:** M1 (Vector Databases), M2 (Cost Optimization), M3 (Deployment)
+**Duration:** 2-3 hours hands-on
+**Outcome:** Cost models and decision frameworks for vector DB selection
+
+## 📁 Project Structure
+
+```
+rag21d_learners/
+├── README.md                   # This file
+├── LICENSE                     # MIT License
+├── .gitignore                  # Python/Jupyter ignores
+├── requirements.txt            # Dependencies (numpy, pandas, PyYAML, pytest)
+├── src/
+│   └── m4_2_cost_models/
+│       ├── __init__.py         # Public API exports
+│       └── core/
+│           └── estimator.py    # Cost estimation logic
+├── configs/
+│   └── pricing/
+│       └── pinecone_2025-11.yaml  # Pricing configuration
+├── notebooks/
+│   └── M4_2_Beyond_Pinecone_Free_Tier.ipynb  # Interactive walkthrough
+├── tests/
+│   └── test_cost_models.py     # Pytest test suite
+└── scripts/
+    └── run_tests.ps1           # PowerShell test runner
+```
 
 ## 🚀 Quick Start
 
@@ -20,49 +42,30 @@ This module provides cost estimation tools and decision frameworks for evaluatin
 pip install -r requirements.txt
 ```
 
-### Usage
+### Launch Interactive Notebook
 
-#### 1. Command-Line Cost Estimation
-
-```bash
-python m4_2_cost_models.py
-```
-
-**Expected Output:**
-```
-=== Pinecone Cost Estimator Demo ===
-
-Small App (500K vectors):
-  Monthly Cost: $70.00
-  Cost per Vector: $0.000140
-
-Medium App (5M vectors, 2 replicas):
-  Monthly Cost: $2800.00
-  Annual Projection: $33600.00
-
-=== Provider Comparison ===
-  Vectors  Pinecone  Weaviate  Qdrant  Elasticsearch  Self-Host (AWS)
-  100,000     $0.00    $25.00   $0.00         $95.00           $70.00
-  ...
-```
-
-#### 2. Interactive Notebook
-
-Open `M4_2_Beyond_Pinecone_Free_Tier.ipynb` in Jupyter:
+**Recommended** - Work through the 6-section guided notebook:
 
 ```bash
-jupyter notebook M4_2_Beyond_Pinecone_Free_Tier.ipynb
+# Option 1: Using PYTHONPATH (preferred)
+$env:PYTHONPATH = "$PWD"  # PowerShell
+export PYTHONPATH=$PWD    # Bash
+
+jupyter notebook notebooks/M4_2_Beyond_Pinecone_Free_Tier.ipynb
+
+# Option 2: Notebook includes fallback sys.path adjustment
+jupyter notebook notebooks/M4_2_Beyond_Pinecone_Free_Tier.ipynb
 ```
 
-**Sections:**
-1. Pricing Reality Check - Understand cost drivers
+**Notebook Sections:**
+1. Pricing Reality Check - Cost drivers and tier structure
 2. Cost Estimator Walkthrough - Calculate your scenarios
-3. Provider Comparison - Feature & cost matrices
-4. Self-Host vs Managed - Decision framework
-5. Decision Cards by Scale - Recommendations by vector count
-6. Troubleshooting & Hidden Costs - Production failures & mitigations
+3. Provider Comparison - Weaviate, Qdrant, Elasticsearch feature matrix
+4. Self-Host vs Managed - Decision framework and break-even analysis
+5. Decision Cards by Scale - Recommendations from prototype to enterprise
+6. Troubleshooting & Hidden Costs - Production failures and mitigations
 
-#### 3. Programmatic Use
+### Programmatic Usage
 
 ```python
 from m4_2_cost_models import PineconeCostEstimator, VectorDBComparison
@@ -72,14 +75,70 @@ estimator = PineconeCostEstimator(vectors=1_000_000, replicas=2)
 result = estimator.estimate_monthly_cost()
 print(f"Monthly cost: ${result['total_monthly']:.2f}")
 
-# Compare providers
-comparison = VectorDBComparison.generate_comparison_table([100_000, 1_000_000])
+# Compare providers across scales
+comparison = VectorDBComparison.generate_comparison_table([100_000, 1_000_000, 5_000_000])
 print(comparison)
 
 # Break-even analysis
 break_even = estimator.calculate_break_even(alternative_cost=100)
 print(f"Break-even at {break_even:,} vectors")
 ```
+
+## Pricing Model
+
+**Version:** `pinecone_2025-11`
+**Effective Date:** 2025-11-01
+**Configuration:** `configs/pricing/pinecone_2025-11.yaml`
+
+Pricing data is loaded from YAML at runtime, with safe fallbacks if the file is missing. This allows:
+- **Version locking** for reproducible cost analysis
+- **Easy updates** when provider pricing changes
+- **Comparison** across historical pricing models
+
+**Current Tiers (Illustrative):**
+- **Free:** 100K vectors, $0/mo
+- **Starter:** Up to 1M vectors, $70/mo
+- **Standard:** $280 per 1M vectors (multi-pod)
+- **Query Overage:** $5 per 1M queries beyond 10M included
+
+⚠️ **Note:** These are illustrative prices for educational purposes. Always verify current pricing at [pinecone.io/pricing](https://www.pinecone.io/pricing/).
+
+### Rounding & Currency
+
+- **Currency:** USD (United States Dollars)
+- **Rounding Policy:** Standard mathematical rounding (0.5 rounds up)
+- **Pod Calculations:** `ceil(vectors / capacity)` for Standard tier
+- **Precision:** Costs reported to 2 decimal places; per-vector costs to 6 decimals
+
+## 🧪 Testing
+
+Run the full test suite using the PowerShell script:
+
+```powershell
+./scripts/run_tests.ps1
+```
+
+**Or manually with pytest:**
+
+```bash
+# Set PYTHONPATH
+$env:PYTHONPATH = "$PWD"  # PowerShell
+export PYTHONPATH=$PWD    # Bash
+
+# Run pytest
+pytest -q
+pytest -v                  # Verbose output
+pytest tests/test_cost_models.py::test_tier_boundaries -v  # Specific test
+```
+
+**Test Coverage:**
+- Tier boundary conditions (Free/Starter/Standard transitions)
+- Replica cost calculations
+- Query overage pricing
+- Break-even analysis logic
+- Provider comparison table generation
+- Rounding policy verification
+- Annual vs monthly projection consistency
 
 ## 📊 Example Scenarios
 
@@ -194,31 +253,6 @@ Base Pinecone: $280/mo (1M vectors)
 - ❌ Variable/spiky traffic
 - ❌ Small team (<5 engineers)
 
-## 🧪 Testing
-
-Run smoke tests:
-
-```bash
-python tests_costs.py
-```
-
-**Expected:**
-```
-Testing PineconeCostEstimator...
-✓ Free tier calculation correct
-✓ Starter tier calculation correct
-✓ Standard tier calculation correct
-✓ Replica costs correct
-✓ Break-even analysis functional
-
-Testing VectorDBComparison...
-✓ Provider features table generated
-✓ Cost comparison table generated
-✓ Self-host estimates reasonable
-
-All tests passed!
-```
-
 ## 📈 Next Steps
 
 1. **Assess Current State:**
@@ -260,8 +294,10 @@ All tests passed!
 
 ## ⚖️ License
 
+MIT License - See [LICENSE](LICENSE) file for details.
+
 Educational material for RAG21D learners. Pricing data is illustrative and should be verified with providers.
 
 ---
 
-**Questions?** Open an issue or refer to `M4_2_Beyond_Pinecone_Free_Tier.ipynb` for detailed walkthroughs.
+**Questions?** Open an issue or refer to `notebooks/M4_2_Beyond_Pinecone_Free_Tier.ipynb` for detailed walkthroughs.

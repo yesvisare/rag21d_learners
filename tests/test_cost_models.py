@@ -3,7 +3,7 @@ Smoke tests for M4.2 cost models.
 Tests that estimators return sane numbers and provider tables build correctly.
 """
 
-import sys
+import pytest
 from m4_2_cost_models import PineconeCostEstimator, VectorDBComparison
 
 
@@ -14,7 +14,6 @@ def test_pinecone_free_tier():
 
     assert result['total_monthly'] == 0, "Free tier should be $0"
     assert result['tier'] == 'Free', "Should be Free tier"
-    print("✓ Free tier calculation correct")
 
 
 def test_pinecone_starter_tier():
@@ -24,7 +23,6 @@ def test_pinecone_starter_tier():
 
     assert result['total_monthly'] == 70, f"Starter tier should be $70, got ${result['total_monthly']}"
     assert result['tier'] == 'Starter', "Should be Starter tier"
-    print("✓ Starter tier calculation correct")
 
 
 def test_pinecone_standard_tier():
@@ -36,7 +34,6 @@ def test_pinecone_standard_tier():
     expected = 1400
     assert result['total_monthly'] == expected, f"Expected ${expected}, got ${result['total_monthly']}"
     assert result['tier'] == 'Standard', "Should be Standard tier"
-    print("✓ Standard tier calculation correct")
 
 
 def test_pinecone_replicas():
@@ -48,7 +45,6 @@ def test_pinecone_replicas():
     expected = 140
     assert result['total_monthly'] == expected, f"Expected ${expected} with 2 replicas, got ${result['total_monthly']}"
     assert result['replica_cost'] == 70, "Replica cost should be $70"
-    print("✓ Replica costs correct")
 
 
 def test_break_even_analysis():
@@ -58,7 +54,6 @@ def test_break_even_analysis():
 
     # Break-even should be somewhere between free tier and 1M vectors
     assert 100_000 < break_even < 10_000_000, f"Break-even {break_even:,} seems unreasonable"
-    print("✓ Break-even analysis functional")
 
 
 def test_cost_per_vector():
@@ -68,7 +63,6 @@ def test_cost_per_vector():
 
     assert cost_per_vector > 0, "Cost per vector should be positive"
     assert cost_per_vector < 1, "Cost per vector should be less than $1"
-    print("✓ Cost per vector calculation correct")
 
 
 def test_annual_projection():
@@ -78,7 +72,6 @@ def test_annual_projection():
     monthly = estimator.estimate_monthly_cost()['total_monthly']
 
     assert annual == monthly * 12, "Annual should be monthly * 12"
-    print("✓ Annual projection correct")
 
 
 def test_provider_features_table():
@@ -90,7 +83,6 @@ def test_provider_features_table():
     assert 'Weaviate' in features['Provider'].values, "Should include Weaviate"
     assert 'Qdrant' in features['Provider'].values, "Should include Qdrant"
     assert 'Elasticsearch' in features['Provider'].values, "Should include Elasticsearch"
-    print("✓ Provider features table generated")
 
 
 def test_weaviate_cost_estimate():
@@ -99,7 +91,6 @@ def test_weaviate_cost_estimate():
 
     assert 'monthly_cost' in result, "Should return monthly_cost"
     assert result['monthly_cost'] > 0, "Cost should be positive"
-    print("✓ Weaviate cost estimation works")
 
 
 def test_qdrant_cost_estimate():
@@ -111,7 +102,6 @@ def test_qdrant_cost_estimate():
 
     result = VectorDBComparison.estimate_qdrant_cost(500_000, 100_000)
     assert result['monthly_cost'] > 0, "Paid tier should have cost"
-    print("✓ Qdrant cost estimation works")
 
 
 def test_elasticsearch_cost_estimate():
@@ -120,7 +110,6 @@ def test_elasticsearch_cost_estimate():
 
     assert 'monthly_cost' in result, "Should return monthly_cost"
     assert result['monthly_cost'] >= 95, "ES typically starts at $95"
-    print("✓ Elasticsearch cost estimation works")
 
 
 def test_self_host_estimate():
@@ -132,7 +121,6 @@ def test_self_host_estimate():
     assert 'total_infrastructure' in result, "Should include total"
     assert result['total_infrastructure'] > 0, "Total should be positive"
     assert result['storage_gb'] > 0, "Storage GB should be positive"
-    print("✓ Self-host estimates reasonable")
 
 
 def test_comparison_table_generation():
@@ -144,7 +132,6 @@ def test_comparison_table_generation():
     assert 'Pinecone' in comparison.columns, "Should include Pinecone"
     assert 'Weaviate' in comparison.columns, "Should include Weaviate"
     assert 'Qdrant' in comparison.columns, "Should include Qdrant"
-    print("✓ Cost comparison table generated")
 
 
 def test_query_cost_calculation():
@@ -155,45 +142,46 @@ def test_query_cost_calculation():
 
     # Should have query costs for 5M excess queries
     assert result['query_cost'] > 0, "Should have query costs for excess queries"
-    print("✓ Query cost calculation works")
 
 
-def run_all_tests():
-    """Run all smoke tests."""
-    print("=" * 50)
-    print("Running M4.2 Cost Models Smoke Tests")
-    print("=" * 50)
-
-    print("\nTesting PineconeCostEstimator...")
-    test_pinecone_free_tier()
-    test_pinecone_starter_tier()
-    test_pinecone_standard_tier()
-    test_pinecone_replicas()
-    test_cost_per_vector()
-    test_annual_projection()
-    test_break_even_analysis()
-    test_query_cost_calculation()
-
-    print("\nTesting VectorDBComparison...")
-    test_provider_features_table()
-    test_weaviate_cost_estimate()
-    test_qdrant_cost_estimate()
-    test_elasticsearch_cost_estimate()
-    test_self_host_estimate()
-    test_comparison_table_generation()
-
-    print("\n" + "=" * 50)
-    print("✓ All tests passed!")
-    print("=" * 50)
+# Parametrized tests for tier boundaries
+@pytest.mark.parametrize("vectors,expected_tier,expected_cost", [
+    (50_000, 'Free', 0),
+    (100_000, 'Free', 0),
+    (100_001, 'Starter', 70),
+    (500_000, 'Starter', 70),
+    (1_000_000, 'Starter', 70),
+    (1_000_001, 'Standard', 560),  # Rounds up to 2 pods
+    (2_000_000, 'Standard', 560),
+])
+def test_tier_boundaries(vectors, expected_tier, expected_cost):
+    """Test tier boundary conditions."""
+    estimator = PineconeCostEstimator(vectors=vectors)
+    result = estimator.estimate_monthly_cost()
+    assert result['tier'] == expected_tier
+    assert result['total_monthly'] == expected_cost
 
 
-if __name__ == "__main__":
-    try:
-        run_all_tests()
-        sys.exit(0)
-    except AssertionError as e:
-        print(f"\n✗ Test failed: {e}")
-        sys.exit(1)
-    except Exception as e:
-        print(f"\n✗ Unexpected error: {e}")
-        sys.exit(1)
+# Parametrized tests for rounding policy
+@pytest.mark.parametrize("vectors,expected_pods", [
+    (1_000_000, 1),
+    (1_500_000, 2),  # Rounds up
+    (2_000_000, 2),
+    (2_000_001, 3),  # Rounds up
+])
+def test_rounding_policy(vectors, expected_pods):
+    """Test standard mathematical rounding for pod calculations."""
+    estimator = PineconeCostEstimator(vectors=vectors)
+    result = estimator.estimate_monthly_cost()
+    if result['tier'] == 'Standard':
+        assert result['pods_needed'] == expected_pods
+
+
+# Test monthly vs annual projection consistency
+def test_annual_projection_consistency():
+    """Test that annual projection is exactly 12x monthly cost."""
+    for vectors in [500_000, 1_000_000, 5_000_000]:
+        estimator = PineconeCostEstimator(vectors=vectors)
+        monthly = estimator.estimate_monthly_cost()['total_monthly']
+        annual = estimator.annual_projection()
+        assert annual == monthly * 12, f"Annual should be 12x monthly for {vectors} vectors"
