@@ -4,8 +4,8 @@ services:
   # Main RAG API Service
   web:
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: docker/Dockerfile
     container_name: rag-api
     ports:
       - "8000:8000"
@@ -14,9 +14,10 @@ services:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
     env_file:
-      - .env
+      - ../.env
     depends_on:
-      - redis
+      redis:
+        condition: service_healthy
     restart: unless-stopped
     networks:
       - rag-network
@@ -39,6 +40,12 @@ services:
     networks:
       - rag-network
     command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
 
 volumes:
   redis-data:

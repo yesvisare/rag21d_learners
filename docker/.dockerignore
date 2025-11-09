@@ -1,5 +1,5 @@
 # Python
-__pycache__
+__pycache__/
 *.pyc
 *.pyo
 *.pyd
@@ -38,6 +38,10 @@ docker-compose.yml
 .pytest_cache
 .coverage
 htmlcov/
+.mypy_cache
 
 # Documentation
 *.md
+
+# Jupyter
+.ipynb_checkpoints/
