@@ -2,53 +2,226 @@
 
 Production-ready prompt optimization system for RAG applications. Reduce LLM costs by 30-50% through intelligent prompt engineering, token optimization, and model routing.
 
-## Overview
+---
 
-This module teaches you how to optimize RAG prompts without sacrificing quality. You'll learn:
+## Purpose
 
-- **RAG-specific prompt templates** optimized for different use cases
-- **Token reduction techniques** that preserve critical information
-- **Intelligent model routing** to match query complexity with appropriate models
-- **A/B testing framework** to measure real impact
-- **Cost/quality trade-offs** and when NOT to optimize
-- **Common failures** and how to fix them
+Learn to **reduce RAG LLM costs by 30-50%** through intelligent prompt engineering, token optimization, and model routing **without sacrificing quality**. This module teaches you when and how to optimize prompts, and critically, **when NOT to optimize**.
+
+## Concepts Covered
+
+- **RAG-specific prompt templates** (5 production-tested variants)
+- **Token estimation and cost projection** across models
+- **Intelligent model routing** based on query complexity
+- **Context formatting** and smart document truncation
+- **A/B testing framework** for prompt comparison
+- **Cost/quality trade-offs** and decision frameworks
+- **Common failure modes** and debugging strategies
+- **ROI analysis** and break-even calculations
+
+## After Completing
+
+You will be able to:
+- Design and test prompt variants that reduce token usage by 30-50%
+- Route queries to appropriate models based on complexity and cost constraints
+- Measure and project costs at different scales (100 to 100K queries/day)
+- Identify when prompt optimization is counterproductive
+- Debug the 5 most common prompt optimization failures
+- Make data-driven decisions using ROI and decision frameworks
+
+## Context in Track
+
+This is **Module 2.2** in the RAG Production Engineering track:
+- M1.x: Built foundational RAG system with vector search and generation
+- M2.1: Implemented caching strategies for cost reduction
+- **M2.2: Optimize prompts and route models intelligently** ← YOU ARE HERE
+- M2.3: Build production monitoring dashboards
+- M2.4: Implement error handling and reliability patterns
+
+**Prerequisites:** M2.1 (Caching), working RAG system, OpenAI API access (optional for testing)
+**Estimated time:** 60-90 minutes for implementation + practice
+
+---
+
+## Project Structure
+
+```
+rag21d_learners/
+├── app.py                          # FastAPI application entry point
+├── requirements.txt                # Python dependencies
+├── .env.example                    # Environment template
+├── .gitignore                      # Git ignore patterns
+├── LICENSE                         # MIT License
+│
+├── src/m2_2_prompt_optimization/   # Core package
+│   ├── __init__.py                 # Package exports & learning arc
+│   ├── config.py                   # Configuration & pricing
+│   ├── module.py                   # Core logic (templates, routing, testing)
+│   └── router.py                   # FastAPI routes
+│
+├── notebooks/                      # Interactive learning
+│   └── M2_2_Prompt_Optimization_and_Model_Selection.ipynb
+│
+├── tests/                          # Test suite
+│   ├── test_smoke.py               # FastAPI endpoint tests
+│   └── test_prompt_ops.py          # Module unit tests
+│
+├── data/example/                   # Example data
+│   └── example_data.json           # Sample documents & queries
+│
+└── scripts/                        # Utility scripts
+    └── run_local.ps1               # Windows server launcher
+```
+
+---
 
 ## Quick Start
 
 ### 1. Installation
 
 ```bash
+# Clone repository (if needed)
+git clone <repo-url>
+cd rag21d_learners
+
+# Install dependencies
 pip install -r requirements.txt
 ```
 
-### 2. Configuration
+### 2. Configuration (Optional)
 
 ```bash
+# Copy environment template
 cp .env.example .env
-# Edit .env and add your OPENAI_API_KEY
+
+# Edit .env and add your OPENAI_API_KEY (optional)
+# Without API key, everything runs in dry-run mode with estimates
 ```
 
-### 3. Run the Notebook
+### 3. Run the API
+
+**Windows (PowerShell):**
+```powershell
+.\scripts\run_local.ps1
+```
+
+**macOS/Linux or Windows (alternative):**
+```bash
+# Set PYTHONPATH
+export PYTHONPATH=$PWD
+
+# Run server
+uvicorn app:app --reload --host 0.0.0.0 --port 8000
+```
+
+**Windows (CMD - one-liner):**
+```cmd
+powershell -c "$env:PYTHONPATH='$PWD'; uvicorn app:app --reload"
+```
+
+API will be available at:
+- **Swagger docs:** http://localhost:8000/docs
+- **ReDoc:** http://localhost:8000/redoc
+- **Root:** http://localhost:8000
+
+### 4. Run the Notebook
 
 ```bash
-jupyter notebook M2_2_Prompt_Optimization_and_Model_Selection.ipynb
+# From project root
+jupyter notebook notebooks/M2_2_Prompt_Optimization_and_Model_Selection.ipynb
 ```
 
 The notebook will automatically detect if you have an API key. Without one, it runs in **DRY RUN mode** using estimates only.
 
-### 4. Test the Module
+### 5. Run Tests
 
 ```bash
-# Dry run (no API key needed)
-python m2_2_prompt_ops.py
+# Run all tests
+pytest tests/
 
-# Run tests
-python tests_prompt_ops.py
+# Run specific test suite
+pytest tests/test_smoke.py      # FastAPI endpoints
+pytest tests/test_prompt_ops.py  # Module tests
+
+# Or run module directly
+python -m src.m2_2_prompt_optimization.module
 ```
+
+---
+
+## API Usage
+
+### Example: Route a Query
+
+```bash
+curl -X POST "http://localhost:8000/m2_2_prompt_optimization/route" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": "What is your return policy?",
+    "context": "We allow 30-day returns with receipt.",
+    "cost_budget": 0.001
+  }'
+```
+
+**Response:**
+```json
+{
+  "model": "gpt-3.5-turbo",
+  "tier": "FAST",
+  "complexity_score": 0,
+  "complexity_factors": {"simple_pattern": true},
+  "reason": "Simple query - fast model sufficient"
+}
+```
+
+### Example: Compare Prompt Templates
+
+```bash
+curl -X POST "http://localhost:8000/m2_2_prompt_optimization/compare" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "templates": ["baseline_comparison", "cost_optimization"],
+    "test_cases": [
+      {"question": "What is your return policy?"}
+    ],
+    "documents": [
+      {"content": "Our return policy allows returns within 30 days.", "score": 0.95}
+    ]
+  }'
+```
+
+**Response:**
+```json
+{
+  "results": [
+    {
+      "template_name": "cost_optimization",
+      "avg_input_tokens": 180,
+      "avg_output_tokens": 150,
+      "avg_total_tokens": 330,
+      "avg_cost_per_query": 0.000347
+    },
+    {
+      "template_name": "baseline_comparison",
+      "avg_input_tokens": 350,
+      "avg_output_tokens": 200,
+      "avg_total_tokens": 550,
+      "avg_cost_per_query": 0.000495
+    }
+  ],
+  "summary": {
+    "baseline_template": "baseline_comparison",
+    "best_template": "cost_optimization",
+    "max_savings_pct": 30.0
+  }
+}
+```
+
+---
 
 ## Components
 
-### 1. Prompt Library (`RAGPromptLibrary`)
+### 1. RAGPromptLibrary
 
 Five production-tested prompt templates:
 
@@ -59,18 +232,18 @@ Five production-tested prompt templates:
 - **SUPPORT_RAG** (170 tokens) - Domain-specific for customer support
 
 ```python
-from m2_2_prompt_ops import RAGPromptLibrary
+from src.m2_2_prompt_optimization import RAGPromptLibrary
 
 template = RAGPromptLibrary.CONCISE_RAG
 print(template.system_prompt)
 ```
 
-### 2. Token Estimator (`TokenEstimator`)
+### 2. TokenEstimator
 
 Accurate token counting and cost projection:
 
 ```python
-from m2_2_prompt_ops import TokenEstimator
+from src.m2_2_prompt_optimization import TokenEstimator
 
 estimator = TokenEstimator("gpt-3.5-turbo")
 tokens = estimator.count_tokens("Your text here")
@@ -85,12 +258,12 @@ projection = estimator.project_monthly_cost(
 print(f"Monthly cost: ${projection['monthly_cost']:.2f}")
 ```
 
-### 3. Model Router (`ModelRouter`)
+### 3. ModelRouter
 
 Intelligent routing based on query complexity:
 
 ```python
-from m2_2_prompt_ops import ModelRouter
+from src.m2_2_prompt_optimization import ModelRouter
 
 router = ModelRouter()
 decision = router.select_model(
@@ -100,7 +273,6 @@ decision = router.select_model(
 
 print(f"Selected: {decision['model']}")
 print(f"Reason: {decision['reason']}")
-# Output: Selected: gpt-3.5-turbo, Reason: Simple query - fast model sufficient
 ```
 
 **Routing Logic:**
@@ -114,20 +286,18 @@ print(f"Reason: {decision['reason']}")
 - Large context volume (>1000 words)
 - Technical/code content
 
-### 4. Context Formatting (`format_context_optimally`)
+### 4. format_context_optimally
 
 Smart document truncation that preserves critical information:
 
 ```python
-from m2_2_prompt_ops import format_context_optimally
-
-documents = [
-    {"content": "Doc 1 content...", "score": 0.95},
-    {"content": "Doc 2 content...", "score": 0.88},
-]
+from src.m2_2_prompt_optimization import format_context_optimally
 
 formatted = format_context_optimally(
-    documents,
+    documents=[
+        {"content": "Doc 1 content...", "score": 0.95},
+        {"content": "Doc 2 content...", "score": 0.88},
+    ],
     max_tokens=500,
     include_metadata=False
 )
@@ -139,37 +309,53 @@ formatted = format_context_optimally(
 - Adds `[truncated]` indicators
 - Respects token limits accurately
 
-### 5. Prompt Tester (`PromptTester`)
+### 5. PromptTester
 
 A/B test framework for comparing templates:
 
 ```python
-from m2_2_prompt_ops import PromptTester
-from openai import OpenAI
+from src.m2_2_prompt_optimization import PromptTester, RAGPromptLibrary
 
-client = OpenAI()  # Or None for dry run
-tester = PromptTester(client, model="gpt-3.5-turbo")
-
+tester = PromptTester(dry_run=True)  # No API calls
 results = tester.compare_templates(
     templates=[
         RAGPromptLibrary.BASIC_RAG,
         RAGPromptLibrary.CONCISE_RAG,
     ],
-    test_cases=[
-        {"question": "What's the refund policy?", "expected_answer": "..."}
-    ],
+    test_cases=[{"question": "What's the refund policy?"}],
     context_docs=documents
 )
-
-# Export results
-tester.export_results(results, "comparison.json")
 ```
 
-**Metrics Tracked:**
-- Average input/output tokens
-- Cost per query
-- Latency (milliseconds)
-- Queries tested
+---
+
+## CLI Usage
+
+The module can be run directly for quick testing:
+
+```bash
+# Run module demo (loads example data and shows all features)
+python -m src.m2_2_prompt_optimization.module
+```
+
+**Expected output:**
+```
+M2.2 Prompt Optimization Module
+================================================================================
+
+Token counting example:
+Text: Our return policy allows customers to return items...
+Tokens: 67
+
+Query: What is your return policy?
+Selected: gpt-3.5-turbo (score: 0)
+Reason: Simple query - fast model sufficient
+
+Running template comparison (DRY RUN)...
+[Table showing token/cost comparison]
+```
+
+---
 
 ## Decision Card: Should You Optimize?
 
@@ -187,6 +373,8 @@ tester.export_results(results, "comparison.json")
 - **No monitoring** (can't measure impact)
 - **Tight latency requirements <200ms** (optimization adds 50-100ms)
 
+---
+
 ## Cost Projections
 
 | Scale | Queries/Day | Baseline Cost | Optimized Cost | Savings |
@@ -199,6 +387,8 @@ tester.export_results(results, "comparison.json")
 **ROI:**
 - Implementation: 8 hours (~$800 cost)
 - Break-even: 1,000 q/day = 3.8 months, 10,000 q/day = 0.4 months
+
+---
 
 ## Common Failures & Fixes
 
@@ -222,74 +412,126 @@ tester.export_results(results, "comparison.json")
 **Cause:** Model ignores "return JSON only"
 **Fix:** Use `response_format={"type": "json_object"}`, temperature=0.0
 
-## Alternatives to Prompt Optimization
+---
 
-### When to Consider Other Approaches:
+## Testing
 
-1. **Model Fine-Tuning** (10K+ q/day, domain-specific)
-   - Upfront: $500-2000 training cost
-   - Savings: 80% at scale
-   - Use case: Legal document analysis
+Run the full test suite:
 
-2. **Infrastructure Optimization** (Caching-first, M2.1)
-   - Upfront: 8-12 hours
-   - Savings: 40-50% with cache hits
-   - Use case: Repetitive queries
+```bash
+# All tests
+pytest tests/ -v
 
-3. **Hybrid Approach** (Recommended for production)
-   - Combine caching + prompt optimization + routing
-   - Savings: 50-70% total
-   - Use case: Multi-tenant SaaS
+# With coverage
+pytest tests/ --cov=src/m2_2_prompt_optimization --cov-report=html
+
+# Specific tests
+pytest tests/test_smoke.py -v        # FastAPI endpoints
+pytest tests/test_prompt_ops.py -v   # Module functionality
+```
+
+**Test coverage includes:**
+- ✓ Token estimation and cost calculation
+- ✓ Prompt template library
+- ✓ Model routing logic
+- ✓ Context formatting and truncation
+- ✓ A/B testing framework (dry-run mode)
+- ✓ FastAPI endpoints (/health, /route, /compare)
+- ✓ Error handling and edge cases
+
+---
 
 ## Troubleshooting
 
-### Issue: "No module named 'm2_2_prompt_ops'"
-**Solution:** Make sure you're running from the correct directory:
+### Issue: "ModuleNotFoundError: No module named 'src'"
+**Solution:** Set PYTHONPATH:
 ```bash
-cd /path/to/rag21d_learners
-python m2_2_prompt_ops.py
+# macOS/Linux
+export PYTHONPATH=$PWD
+
+# Windows PowerShell
+$env:PYTHONPATH = "$PWD"
+
+# Windows CMD
+set PYTHONPATH=%CD%
 ```
 
 ### Issue: "OpenAI API key not found"
-**Solution:**
-1. Copy `.env.example` to `.env`
-2. Add your API key: `OPENAI_API_KEY=sk-...`
-3. Or run in dry run mode (estimates only)
+**Solution:** Either:
+1. Add API key to `.env` file
+2. Or run in dry-run mode (uses estimates only)
 
-### Issue: Notebook costs too much
-**Solution:** The notebook uses 3 test queries by default. Costs ~$0.01 per run with API calls. Run in dry run mode if concerned.
+### Issue: Notebook import errors
+**Solution:** Ensure you're running from project root:
+```bash
+cd /path/to/rag21d_learners
+jupyter notebook notebooks/M2_2_Prompt_Optimization_and_Model_Selection.ipynb
+```
 
-### Issue: Results seem wrong
-**Solution:** In dry run mode, results are estimates only. Run with API key for accurate measurements.
+### Issue: Tests fail with path errors
+**Solution:** Run tests from project root:
+```bash
+cd /path/to/rag21d_learners
+pytest tests/
+```
 
-## Files
+---
 
-- `M2_2_Prompt_Optimization_and_Model_Selection.ipynb` - Main interactive notebook
-- `m2_2_prompt_ops.py` - Core module with all classes
-- `config.py` - Configuration and pricing
-- `example_data.json` - Sample documents and queries
-- `tests_prompt_ops.py` - Smoke tests
-- `requirements.txt` - Dependencies
-- `.env.example` - Environment template
+## Development
+
+### Project slug
+Module slug: `m2_2_prompt_optimization`
+
+### Adding new prompt templates
+
+Edit `src/m2_2_prompt_optimization/module.py`:
+
+```python
+class RAGPromptLibrary:
+    MY_CUSTOM_RAG = PromptTemplate(
+        system_prompt="Your system prompt...",
+        user_template="Your user template with {context} and {question}",
+        tokens_estimate=200,
+        use_case="my_custom_use_case"
+    )
+```
+
+### Extending the API
+
+Add new endpoints in `src/m2_2_prompt_optimization/router.py`:
+
+```python
+@router.post("/my-endpoint")
+async def my_endpoint(request: MyRequest) -> MyResponse:
+    # Your logic here
+    pass
+```
+
+---
 
 ## Next Steps
 
 1. **Run the notebook** - Work through all 7 sections
-2. **Test with your data** - Replace `example_data.json` with real documents
+2. **Test with your data** - Replace `data/example/example_data.json` with real documents
 3. **Measure impact** - Use `PromptTester` to compare templates
 4. **Calculate ROI** - Use the decision card to determine if optimization is worth it
 5. **Implement monitoring** - Track tokens, cost, and quality metrics
 6. **Module M2.3** - Build production monitoring dashboard
 
+---
+
 ## Resources
 
 - [OpenAI Prompt Engineering Guide](https://platform.openai.com/docs/guides/prompt-engineering)
 - [Token counting with tiktoken](https://github.com/openai/tiktoken)
+- [FastAPI Documentation](https://fastapi.tiangolo.com/)
 - [RAG best practices](https://www.anthropic.com/index/retrieval-augmented-generation)
+
+---
 
 ## License
 
-Educational purposes only. Part of RAG 21-Day Learners course.
+MIT License - See [LICENSE](LICENSE) file for details.
 
 ---
 

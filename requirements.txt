@@ -1,6 +1,21 @@
+# Core dependencies
 openai==1.46.0
 tiktoken==0.7.0
 numpy==1.26.4
 pandas==2.2.2
 python-dotenv==1.0.1
 tqdm==4.66.5
+
+# FastAPI and web server
+fastapi==0.109.0
+uvicorn[standard]==0.27.0
+pydantic==2.5.3
+
+# Testing
+pytest==7.4.4
+pytest-asyncio==0.23.3
+httpx==0.26.0
+
+# Optional: Jupyter notebook support
+jupyter==1.0.0
+ipykernel==6.29.0
