@@ -1,2 +1,2 @@
-$env:PYTHONPATH = "$PWD"
-pytest
+$env:PYTHONPATH = "$PWD/src"
+pytest -q

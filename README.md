@@ -118,9 +118,18 @@ The `smart_alpha()` function dynamically adjusts alpha based on query characteri
 pip install -r requirements.txt
 ```
 
-## Configuration
+## Environment Variables
 
-Create a `.env` file (see `.env.example`):
+Configure your API keys in a `.env` file (copy from `.env.example`):
+
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `OPENAI_API_KEY` | OpenAI API key for embeddings | `sk-...` |
+| `PINECONE_API_KEY` | Pinecone API key for vector storage | `pc-...` |
+| `PINECONE_INDEX_NAME` | Pinecone index name | `hybrid-search` |
+| `PINECONE_NAMESPACE` | Namespace for document organization | `default` |
+
+Create a `.env` file:
 
 ```bash
 OPENAI_API_KEY=sk-your-key-here
@@ -133,7 +142,7 @@ PINECONE_INDEX_NAME=hybrid-search
 ### Basic Example
 
 ```python
-from src.m4_1_hybrid_search import HybridSearchEngine
+from m4_1_hybrid_search import HybridSearchEngine
 
 # Initialize
 engine = HybridSearchEngine(
@@ -264,14 +273,17 @@ Total:       ~$0.15
 
 ## Testing
 
-Run smoke tests:
-```bash
-# On Windows PowerShell
+**Windows (PowerShell):**
+```powershell
 powershell ./scripts/run_tests.ps1
-
-# On Linux/Mac
-PYTHONPATH=$PWD pytest
 ```
+
+**Linux/Mac:**
+```bash
+PYTHONPATH=$PWD/src pytest -q
+```
+
+Tests will run in STUB mode (offline) if API keys are missing. All BM25 and smart_alpha tests work without keys.
 
 Run notebook demos:
 ```bash
@@ -284,16 +296,18 @@ jupyter notebook notebooks/M4_1_Hybrid_Search.ipynb
 .
 ├── src/
 │   └── m4_1_hybrid_search/
-│       └── __init__.py          # HybridSearchEngine class & core logic
+│       ├── __init__.py          # Public API (re-exports HybridSearchEngine)
+│       └── core/
+│           └── engine.py        # Core implementation
 ├── notebooks/
 │   └── M4_1_Hybrid_Search.ipynb # Interactive tutorial (7 sections)
 ├── tests/
 │   ├── __init__.py
-│   └── test_hybrid_merge.py     # Smoke tests
+│   └── test_hybrid_merge.py     # Smoke tests (7 tests)
 ├── scripts/
-│   └── run_tests.ps1            # PowerShell test runner
+│   └── run_tests.ps1            # Windows test runner (sets PYTHONPATH)
 ├── requirements.txt             # Python dependencies
-├── .env.example                 # Configuration template
+├── .env.example                 # Environment variable template
 ├── .gitignore                   # Git ignore patterns
 ├── LICENSE                      # MIT License
 └── README.md                    # This file

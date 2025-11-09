@@ -5,7 +5,7 @@ Tests RRF ranking, alpha effects, and stub mode functionality.
 
 import os
 import sys
-from src.m4_1_hybrid_search import HybridSearchEngine
+from m4_1_hybrid_search import HybridSearchEngine
 
 
 def test_bm25_basic():
@@ -242,12 +242,9 @@ if __name__ == "__main__":
     # Download NLTK data if needed
     import nltk
     try:
-        nltk.data.find('tokenizers/punkt_tab')
+        nltk.data.find('tokenizers/punkt')
     except LookupError:
         print("Downloading NLTK punkt tokenizer...")
-        try:
-            nltk.download('punkt_tab', quiet=True)
-        except:
-            nltk.download('punkt', quiet=True)
+        nltk.download('punkt', quiet=True)
 
     run_all_tests()
