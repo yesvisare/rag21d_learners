@@ -383,7 +383,22 @@ def main_menu():
 
 
 def generate_skills_csv():
-    """Generate skills matrix CSV file"""
+    """Generate skills matrix CSV file for tracking course competencies.
+
+    Creates a CSV file at templates/skills_matrix.csv containing all technical
+    and soft skills from the course with columns for self-assessment (1-5 scale)
+    and notes. The templates/ directory is created if it doesn't exist.
+
+    Side Effects:
+        Creates or overwrites templates/skills_matrix.csv
+        Creates templates/ directory if missing
+        Prints success message to stdout
+
+    Example:
+        >>> generate_skills_csv()
+        ✅ Skills matrix CSV generated: templates/skills_matrix.csv
+        💡 Fill in your confidence levels (1-5) and notes!
+    """
     import csv
     import os
 
@@ -409,7 +424,23 @@ def generate_skills_csv():
 
 
 def generate_action_plan_file():
-    """Generate action plan markdown file"""
+    """Generate 30-day action plan markdown template for post-course career strategy.
+
+    Creates a markdown file at templates/action_plan.md with a structured 30-day
+    plan including learning path selection, daily task breakdowns, weekly review
+    checklists, project planning sections, and reflection prompts. The templates/
+    directory is created if it doesn't exist.
+
+    Side Effects:
+        Creates or overwrites templates/action_plan.md
+        Creates templates/ directory if missing
+        Prints success message to stdout with customization tip
+
+    Example:
+        >>> generate_action_plan_file()
+        ✅ Action plan template generated: templates/action_plan.md
+        💡 Customize it with your goals and track your progress!
+    """
     import os
 
     os.makedirs("templates", exist_ok=True)
@@ -532,24 +563,53 @@ def generate_action_plan_file():
 
 
 if __name__ == "__main__":
-    import sys
+    import argparse
 
-    # Support non-interactive CLI flags for automation
-    if len(sys.argv) > 1:
-        if sys.argv[1] == "--generate-skills-csv":
-            generate_skills_csv()
-            sys.exit(0)
-        elif sys.argv[1] == "--generate-action-plan":
-            generate_action_plan_file()
-            sys.exit(0)
-        else:
-            print(f"Unknown option: {sys.argv[1]}")
-            print("Available options:")
-            print("  --generate-skills-csv")
-            print("  --generate-action-plan")
-            sys.exit(1)
+    # Parse command-line arguments for non-interactive automation
+    parser = argparse.ArgumentParser(
+        description="M4.4 Course Wrap-up Planning Tools - Interactive CLI or automated template generation",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  python m4_4_planning_tools.py                      # Interactive menu
+  python m4_4_planning_tools.py --generate-skills-csv
+  python m4_4_planning_tools.py --generate-action-plan
+  python m4_4_planning_tools.py --print-learning-paths
+        """
+    )
 
-    # Interactive mode (default)
+    parser.add_argument(
+        "--generate-skills-csv",
+        action="store_true",
+        help="Generate templates/skills_matrix.csv and exit"
+    )
+    parser.add_argument(
+        "--generate-action-plan",
+        action="store_true",
+        help="Generate templates/action_plan.md and exit"
+    )
+    parser.add_argument(
+        "--print-learning-paths",
+        action="store_true",
+        help="Display all three learning paths with decision cards and exit"
+    )
+
+    args = parser.parse_args()
+
+    # Handle non-interactive flags with early exit
+    if args.generate_skills_csv:
+        generate_skills_csv()
+        exit(0)
+
+    if args.generate_action_plan:
+        generate_action_plan_file()
+        exit(0)
+
+    if args.print_learning_paths:
+        LearningPaths.display()
+        exit(0)
+
+    # Interactive mode (default when no flags provided)
     print("\n🎉 Welcome to M4.4 Course Wrap-up Planning Tools!")
     print("Your guide to next steps after completing the RAG course.\n")
     main_menu()

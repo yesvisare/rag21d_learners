@@ -88,10 +88,16 @@ For automation or quick template generation:
 ./scripts/run_cli.ps1 -Plan
 ```
 
+**Print learning paths with decision cards:**
+```powershell
+./scripts/run_cli.ps1 -Paths
+```
+
 **Or directly:**
 ```bash
 python m4_4_planning_tools.py --generate-skills-csv
 python m4_4_planning_tools.py --generate-action-plan
+python m4_4_planning_tools.py --print-learning-paths
 ```
 
 ---

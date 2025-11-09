@@ -3,7 +3,8 @@
 
 param(
     [switch]$Skills,
-    [switch]$Plan
+    [switch]$Plan,
+    [switch]$Paths
 )
 
 if ($Skills) {
@@ -13,6 +14,11 @@ if ($Skills) {
 
 if ($Plan) {
     python m4_4_planning_tools.py --generate-action-plan
+    exit
+}
+
+if ($Paths) {
+    python m4_4_planning_tools.py --print-learning-paths
     exit
 }
 
