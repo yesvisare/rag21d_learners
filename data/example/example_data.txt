@@ -1,0 +1,20 @@
+RAG systems reduce hallucination by 60-80% by grounding LLM responses in actual documentation.
+Improving RAG accuracy requires careful tuning of retrieval strategies, reranking, and context preparation.
+Query expansion generates alternative phrasings to capture more relevant documents from the index.
+Hybrid search combines dense embeddings for semantics with sparse BM25 for exact keyword matching.
+Cross-encoder reranking significantly improves result quality but adds 50-100ms latency per query.
+Production RAG systems handle 1,000+ documents efficiently with proper indexing and caching strategies.
+Namespace organization in Pinecone allows logical separation of document collections by project or domain.
+Alpha tuning adjusts the balance between dense and sparse retrieval based on query type characteristics.
+Factual queries benefit from higher dense weights (alpha=0.7) to leverage semantic understanding.
+How-to queries need balanced retrieval (alpha=0.5) combining exact terms with conceptual matches.
+Context deduplication prevents redundant information from consuming valuable token budget in prompts.
+Response latency in RAG systems typically ranges 200-400ms including retrieval, reranking, and generation.
+Source attribution builds user trust by showing which documents contributed to each generated answer.
+Token window constraints limit context size, requiring smart chunking and prioritization strategies.
+Query classification into six types enables type-specific optimization of retrieval and prompting.
+Troubleshooting queries require lower alpha (0.3) to prioritize exact error messages and technical terms.
+BM25 sparse encoding excels at matching specific product names, error codes, and technical identifiers.
+Metadata filtering on date ranges, categories, or access levels refines retrieval before semantic scoring.
+Graceful fallbacks handle missing keys, empty results, and API failures without crashing the pipeline.
+Decision cards help teams assess whether RAG architecture fits their use case before implementation.
