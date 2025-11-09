@@ -7,12 +7,17 @@ Simple but useful tests to ensure basic functionality works:
 - Example data loads successfully
 - Cosine similarity calculations work
 - Basic validation of vector operations
+- API endpoints respond correctly
 
-Run: python tests_smoke.py
+Run: python -m pytest tests/test_smoke.py -v
+Or: python tests/test_smoke.py (standalone mode)
 """
 
 import sys
 from pathlib import Path
+
+# Add repo root to path for imports
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
 # ============================================================================
 # TEST: Configuration Loading
@@ -22,7 +27,7 @@ def test_config_loads():
     """Test that configuration module loads without errors."""
     print("Testing configuration loading...", end=" ")
     try:
-        import config
+        from src.m1_1_vector_databases import config
         print("✓ PASS")
         return True
     except Exception as e:
@@ -34,7 +39,7 @@ def test_config_constants():
     """Test that required configuration constants are defined."""
     print("Testing configuration constants...", end=" ")
     try:
-        import config
+        from src.m1_1_vector_databases import config
 
         required_constants = [
             'EMBEDDING_MODEL',
@@ -70,9 +75,9 @@ def test_example_data_exists():
     """Test that example_data.txt exists."""
     print("Testing example data file exists...", end=" ")
     try:
-        data_file = Path("example_data.txt")
+        data_file = Path("data/example/example_data.txt")
         if not data_file.exists():
-            print("✗ FAIL: example_data.txt not found")
+            print("✗ FAIL: data/example/example_data.txt not found")
             return False
         print("✓ PASS")
         return True
@@ -85,9 +90,9 @@ def test_load_example_texts():
     """Test that example texts load correctly."""
     print("Testing example data loading...", end=" ")
     try:
-        from m1_1_vector_databases import load_example_texts
+        from src.m1_1_vector_databases.module import load_example_texts
 
-        texts = load_example_texts()
+        texts = load_example_texts("data/example/example_data.txt")
 
         if not texts:
             print("✗ FAIL: No texts loaded")
@@ -105,7 +110,7 @@ def test_load_example_texts():
         return True
 
     except FileNotFoundError:
-        print("✗ FAIL: example_data.txt not found")
+        print("✗ FAIL: data/example/example_data.txt not found")
         return False
     except Exception as e:
         print(f"✗ FAIL: {str(e)}")
@@ -120,7 +125,7 @@ def test_cosine_similarity_identical():
     """Test cosine similarity with identical vectors."""
     print("Testing cosine similarity (identical vectors)...", end=" ")
     try:
-        from m1_1_vector_databases import cosine_similarity
+        from src.m1_1_vector_databases.module import cosine_similarity
 
         vec1 = [1.0, 2.0, 3.0, 4.0]
         vec2 = [1.0, 2.0, 3.0, 4.0]
@@ -144,7 +149,7 @@ def test_cosine_similarity_orthogonal():
     """Test cosine similarity with orthogonal vectors."""
     print("Testing cosine similarity (orthogonal vectors)...", end=" ")
     try:
-        from m1_1_vector_databases import cosine_similarity
+        from src.m1_1_vector_databases.module import cosine_similarity
 
         vec1 = [1.0, 0.0]
         vec2 = [0.0, 1.0]
@@ -168,7 +173,7 @@ def test_cosine_similarity_opposite():
     """Test cosine similarity with opposite vectors."""
     print("Testing cosine similarity (opposite vectors)...", end=" ")
     try:
-        from m1_1_vector_databases import cosine_similarity
+        from src.m1_1_vector_databases.module import cosine_similarity
 
         vec1 = [1.0, 2.0, 3.0]
         vec2 = [-1.0, -2.0, -3.0]
@@ -192,7 +197,7 @@ def test_cosine_similarity_dimension_mismatch():
     """Test that cosine similarity raises error for dimension mismatch."""
     print("Testing cosine similarity (dimension mismatch)...", end=" ")
     try:
-        from m1_1_vector_databases import cosine_similarity
+        from src.m1_1_vector_databases.module import cosine_similarity
 
         vec1 = [1.0, 2.0, 3.0]
         vec2 = [1.0, 2.0]
@@ -276,6 +281,44 @@ def test_api_keys_configured():
 
 
 # ============================================================================
+# TEST: API Endpoints
+# ============================================================================
+
+def test_api_health():
+    """Test that API health endpoint responds correctly."""
+    print("Testing API health endpoint...", end=" ")
+    try:
+        from fastapi.testclient import TestClient
+        from app import app
+
+        client = TestClient(app)
+        response = client.get("/m1_1/health")
+
+        if response.status_code != 200:
+            print(f"✗ FAIL: Expected status 200, got {response.status_code}")
+            return False
+
+        data = response.json()
+        if data.get("status") != "ok":
+            print(f"✗ FAIL: Expected status 'ok', got {data.get('status')}")
+            return False
+
+        if data.get("module") != "m1_1_vector_databases":
+            print(f"✗ FAIL: Wrong module name")
+            return False
+
+        print("✓ PASS")
+        return True
+
+    except ImportError:
+        print("⚠ SKIP: FastAPI/TestClient not available")
+        return True  # Don't fail, just skip
+    except Exception as e:
+        print(f"✗ FAIL: {str(e)}")
+        return False
+
+
+# ============================================================================
 # MAIN TEST RUNNER
 # ============================================================================
 
@@ -303,6 +346,9 @@ def run_all_tests():
         ("Cosine Similarity (Orthogonal)", test_cosine_similarity_orthogonal),
         ("Cosine Similarity (Opposite)", test_cosine_similarity_opposite),
         ("Cosine Similarity (Dimension Error)", test_cosine_similarity_dimension_mismatch),
+
+        # API tests
+        ("API Health Endpoint", test_api_health),
 
         # API keys (warning only)
         ("API Keys", test_api_keys_configured),
@@ -332,8 +378,9 @@ def run_all_tests():
         print()
         print("Next steps:")
         print("  1. Configure API keys in .env file")
-        print("  2. Run: python m1_1_vector_databases.py --init")
-        print("  3. Run: python m1_1_vector_databases.py --query \"vector search\"")
+        print("  2. Run: python -m src.m1_1_vector_databases.module --init")
+        print("  3. Run: python -m src.m1_1_vector_databases.module --query \"vector search\"")
+        print("  4. Start API: uvicorn app:app --reload")
         return 0
     else:
         print("✗ Some tests failed. Please fix the issues above.")

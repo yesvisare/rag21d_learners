@@ -5,20 +5,46 @@ A complete, runnable learning workspace for understanding vector databases, sema
 
 ---
 
-## 📚 What You'll Learn
+## Purpose
 
-- **Semantic search fundamentals:** How embeddings represent meaning as 1536-dimensional vectors
-- **Cosine similarity:** Mathematical foundation for measuring semantic distance
-- **Approximate Nearest Neighbor (ANN):** Why vector databases are faster than brute-force search
-- **Pinecone operations:** Index creation, upserting, querying with metadata filtering
-- **Namespaces:** Multi-tenancy and data isolation strategies
-- **Score thresholds:** Filtering results for production quality
-- **Common failures:** Debug and prevent the 5 most frequent errors
-- **Trade-offs:** When to use vector DBs and when to avoid them
+This module teaches the foundation of RAG systems: **vector databases for semantic search**. You'll learn how to convert text into numerical embeddings, store them efficiently in Pinecone, and retrieve relevant information based on **meaning** rather than keyword matching.
 
-**Duration:** 60-90 minutes
-**Difficulty:** Beginner to Intermediate
-**Prerequisites:** Python 3.8+, basic understanding of APIs
+By the end, you'll understand when to use vector databases, when to avoid them, and how to build production-ready semantic search systems.
+
+## Concepts Covered
+
+1. **Vector Embeddings** - Converting text to 1536-dimensional numerical representations
+2. **Semantic Similarity** - Measuring meaning with cosine similarity (-1 to 1)
+3. **Approximate Nearest Neighbor (ANN)** - Why vector DBs are 10,000x faster
+4. **Pinecone Operations** - Index creation, batch upsertion, semantic queries
+5. **Production Patterns** - Rate limiting, namespaces, metadata, error handling
+6. **Decision Frameworks** - When to use vector DBs vs alternatives
+
+## After Completing
+
+You will be able to:
+- ✅ Build production-ready semantic search systems
+- ✅ Understand trade-offs between vector databases and traditional search
+- ✅ Debug the 5 most common vector database failures
+- ✅ Implement multi-tenant isolation using namespaces
+- ✅ Optimize costs and latency for production workloads
+- ✅ Make informed architectural decisions about search systems
+
+## Context in Track
+
+**M1.1 Vector Databases** ← You are here
+↓
+M1.2 Chunking Strategies - How to split documents for optimal retrieval
+↓
+M1.3 Embedding Models - Choosing and fine-tuning models
+↓
+M1.4 Retrieval Strategies - Advanced querying (hybrid search, reranking)
+↓
+M2.x LLM Integration - Connecting retrieval to language models
+↓
+M3.x Production RAG - Scaling, monitoring, and evaluation
+
+**This module is the critical first step.** Without understanding vector databases, you cannot build effective RAG systems.
 
 ---
 
@@ -57,109 +83,140 @@ cp .env.example .env
 ### 3. Validate Configuration
 
 ```bash
-python config.py
-```
-
-Expected output:
-```
-Configuration Validation
-==================================================
-✓ OPENAI_API_KEY is set
-✓ PINECONE_API_KEY is set
-✓ PINECONE_REGION: us-east-1
-✓ EMBEDDING_MODEL: text-embedding-3-small
-✓ EMBEDDING_DIM: 1536
-✓ INDEX_NAME: tvh-m1-vectors
-==================================================
-✓ Configuration is valid!
+python -c "from src.m1_1_vector_databases import config; config.validate_config()"
 ```
 
 ### 4. Run Smoke Tests
 
 ```bash
-python tests_smoke.py
+python tests/test_smoke.py
+# Or: python -m pytest tests/test_smoke.py -v
 ```
-
-Ensures all dependencies are installed and basic functionality works.
 
 ---
 
-## 💻 Run Flow
+## 💻 Usage Options
 
-### Initialize Vector Database
+### Option 1: Python Library
 
-Create Pinecone index and upsert example documents:
+```python
+from src.m1_1_vector_databases import config
+from src.m1_1_vector_databases.module import (
+    load_example_texts,
+    embed_texts_openai,
+    create_index_and_wait_pinecone,
+    upsert_vectors,
+    query_pinecone
+)
+
+# Initialize clients
+openai_client, pinecone_client = config.get_clients()
+
+# Load data and generate embeddings
+texts = load_example_texts()
+embeddings = embed_texts_openai(texts, client=openai_client)
+
+# Create index and upsert
+index = create_index_and_wait_pinecone(pinecone_client, config.INDEX_NAME)
+# ... prepare vectors and upsert
+
+# Query
+results = query_pinecone(index, "What is vector search?", client=openai_client)
+```
+
+### Option 2: Command Line Interface
 
 ```bash
-python m1_1_vector_databases.py --init
-```
+# Initialize database
+python -m src.m1_1_vector_databases.module --init
 
-**What this does:**
-1. Creates Pinecone index (`tvh-m1-vectors`) with 1536 dimensions
-2. Waits for index initialization (30-60 seconds)
-3. Loads 20 example documents from `example_data.txt`
-4. Generates embeddings using `text-embedding-3-small`
-5. Upserts vectors with rich metadata to `demo` namespace
-
-**Expected output:**
-```
-Creating Pinecone index: tvh-m1-vectors
-  Dimension: 1536
-  Metric: cosine
-  Region: us-east-1
-Waiting for index initialization...
-✓ Index ready after 42.3 seconds
-
-Generating embeddings for 20 texts using text-embedding-3-small
-Embedding texts: 100%|██████████| 20/20 [00:03<00:00,  5.67it/s]
-
-Upserting 20 vectors to namespace 'demo'
-  Batch 1: Upserted 20/20 vectors
-✓ Upsert complete: 20 vectors
-```
-
-### Query the Database
-
-Run semantic search queries:
-
-```bash
-# Basic query
-python m1_1_vector_databases.py --query "What is vector search?"
+# Query database
+python -m src.m1_1_vector_databases.module --query "What is vector search?"
 
 # Custom parameters
-python m1_1_vector_databases.py --query "climate change impacts" --top_k 3 --threshold 0.8
-
-# Different namespace
-python m1_1_vector_databases.py --query "machine learning" --namespace demo --top_k 5
+python -m src.m1_1_vector_databases.module --query "climate change" --top_k 3 --threshold 0.8
 ```
 
-**Example output:**
+### Option 3: REST API
+
+```bash
+# Start server
+uvicorn app:app --reload
+
+# Or on Windows:
+powershell -c "$env:PYTHONPATH='$PWD'; uvicorn app:app --reload"
+
+# Or use the PowerShell script:
+.\scripts\run_local.ps1
 ```
-Query: 'What is vector search?'
 
-Found 3/3 results above threshold
+**API Endpoints:**
+- `GET /` - Redirects to API documentation
+- `GET /health` - Global health check
+- `GET /m1_1/health` - Module health check
+- `POST /m1_1/ingest` - Initialize index and ingest data
+- `POST /m1_1/query` - Semantic search query
+- `GET /m1_1/metrics` - Index statistics
 
-1. Score: 0.8923
-   Text: Vector databases enable semantic search using embeddings...
-   Source: example_data.txt
-   Chunk: 0
+**Example curl commands:**
 
-2. Score: 0.8156
-   Text: Pinecone is a managed vector database designed...
-   Source: example_data.txt
-   Chunk: 1
+```bash
+# Health check
+curl http://localhost:8000/m1_1/health
 
-3. Score: 0.7543
-   Text: Natural language processing enables computers...
-   Source: example_data.txt
-   Chunk: 15
+# Ingest data
+curl -X POST http://localhost:8000/m1_1/ingest
+
+# Query
+curl -X POST http://localhost:8000/m1_1/query \
+  -H "Content-Type: application/json" \
+  -d '{"query": "What is vector search?", "top_k": 3, "threshold": 0.7}'
+
+# Get metrics
+curl http://localhost:8000/m1_1/metrics
+```
+
+**API Documentation:** http://localhost:8000/docs
+
+---
+
+## 📁 File Structure
+
+```
+rag21d_learners/
+├── README.md                          # This file
+├── LICENSE                            # MIT License
+├── .gitignore                         # Git ignore patterns
+├── .env.example                       # Environment variables template
+├── requirements.txt                   # Python dependencies
+├── app.py                             # FastAPI application entry point
+│
+├── src/
+│   └── m1_1_vector_databases/         # Main package
+│       ├── __init__.py                # Package exports & docstring
+│       ├── config.py                  # Configuration & environment
+│       ├── module.py                  # Core library functions
+│       └── router.py                  # FastAPI routes
+│
+├── data/
+│   └── example/
+│       └── example_data.txt           # 20 sample documents
+│
+├── notebooks/
+│   └── M1_1_Vector_Databases.ipynb    # Tutorial notebook (6 sections)
+│
+├── tests/
+│   └── test_smoke.py                  # Smoke tests & API tests
+│
+└── scripts/
+    └── run_local.ps1                  # Windows dev server launcher
 ```
 
 ---
 
 ## 📓 Notebook Tour
 
-Open `M1_1_Vector_Databases.ipynb` for interactive tutorial with 6 sections:
+Open `notebooks/M1_1_Vector_Databases.ipynb` for interactive tutorial:
 
 ### Section 1: Why Vector Databases?
 - The semantic gap problem
@@ -167,9 +224,9 @@ Open `M1_1_Vector_Databases.ipynb` for interactive tutorial with 6 sections:
 - Cosine similarity calculations (with live demos)
 
 ### Section 2: Setting Up
-- Requirements and dependencies walkthrough
-- Environment configuration (`.env` setup)
-- `config.py` constants explanation
+- Requirements and dependencies
+- Environment configuration
+- Config constants explanation
 
 ### Section 3: Pinecone Basics
 - Creating indexes with readiness polling
@@ -177,13 +234,13 @@ Open `M1_1_Vector_Databases.ipynb` for interactive tutorial with 6 sections:
 - Serverless vs pod-based deployment
 
 ### Section 4: Upserting Data
-- Batching strategies (100-200 vectors recommended)
+- Batching strategies (100-200 vectors)
 - Rich metadata (text, source, chunk_id, timestamp)
 - Cost and latency considerations
 
 ### Section 5: Querying & Filtering
-- Semantic search with `top_k` parameter
-- Score thresholding (0.7 recommended for production)
+- Semantic search with top_k
+- Score thresholding (0.7 recommended)
 - Metadata filtering for multi-tenancy
 - Result inspection and interpretation
 
@@ -332,75 +389,28 @@ index.upsert([{
 
 ---
 
-### Error: Low-Quality Results
+### Error: Import Issues
 
-**Symptom:** LLM gives poor answers despite successful queries.
+```python
+ModuleNotFoundError: No module named 'src'
+```
 
-**Cause:** Including results with low similarity scores (<0.5).
+**Cause:** PYTHONPATH not set correctly.
 
 **Fix:**
-```python
-# Filter by score threshold
-THRESHOLD = 0.7  # Adjust based on your domain
+```bash
+# Linux/Mac
+export PYTHONPATH=$PWD
+python -m src.m1_1_vector_databases.module --init
 
-good_matches = [
-    match for match in results['matches']
-    if match['score'] > THRESHOLD
-]
+# Windows PowerShell
+$env:PYTHONPATH = $PWD
+python -m src.m1_1_vector_databases.module --init
 
-if not good_matches:
-    print("No sufficiently similar results found")
+# Or run from repo root always
+cd /path/to/rag21d_learners
+python -m src.m1_1_vector_databases.module --init
 ```
-
-**Prevention:** Inspect score distributions during development, calibrate threshold to your domain.
-
----
-
-### Error: Rate Limit Exceeded
-
-```
-openai.RateLimitError: Error code: 429
-```
-
-**Cause:** Hitting OpenAI rate limits (3K requests/min free tier).
-
-**Fix:**
-```python
-# Implement exponential backoff (already in embed_texts_openai)
-for attempt in range(max_retries):
-    try:
-        response = client.embeddings.create(...)
-        break
-    except RateLimitError:
-        wait_time = 2 ** attempt
-        time.sleep(wait_time)
-```
-
-**Prevention:** Batch requests, add delays between batches, use batch embedding APIs when available.
-
----
-
-### Error: Index Not Ready
-
-```
-PineconeException: Index 'my-index' is not ready. Status: Initializing
-```
-
-**Cause:** Trying to use index immediately after creation.
-
-**Fix:**
-```python
-# Use the provided helper function
-index = create_index_and_wait_pinecone(
-    pc,
-    "my-index",
-    dimension=1536,
-    timeout=120  # Wait up to 2 minutes
-)
-# Now safe to upsert/query
-```
-
-**Prevention:** Always implement readiness check after index creation. Typical wait: 30-60 seconds for serverless indexes.
 
 ---
 
@@ -422,45 +432,6 @@ index = create_index_and_wait_pinecone(
 - **Pinecone query:** 30-80ms
 - **Total query pipeline:** **50-150ms minimum**
 
-### Namespace Strategy
-
-**Use namespaces to reduce costs and improve performance:**
-
-```python
-# Multi-tenant isolation
-index.upsert(vectors, namespace="user-123")
-index.query(query_embedding, namespace="user-123")  # Only searches user-123's data
-
-# Environment separation
-index.upsert(vectors, namespace="production")
-index.upsert(test_vectors, namespace="staging")
-
-# Domain partitioning
-index.upsert(tech_vectors, namespace="technology")
-index.upsert(finance_vectors, namespace="finance")
-```
-
-**Benefits:**
-- Faster queries (smaller search space)
-- Data isolation (security & compliance)
-- Cost efficiency (one index, multiple tenants)
-
----
-
-## 🏗️ File Structure
-
-```
-rag21d_learners/
-├── m1_1_vector_databases.py       # Production-style CLI tool
-├── M1_1_Vector_Databases.ipynb    # Tutorial notebook (6 sections)
-├── config.py                       # Environment configuration
-├── requirements.txt                # Pinned dependencies
-├── example_data.txt                # 20 diverse sample documents
-├── tests_smoke.py                  # Basic validation tests
-├── .env.example                    # Environment template
-└── README.md                       # This file
-```
-
 ---
 
 ## 🎯 Challenges
@@ -474,8 +445,6 @@ rag21d_learners/
 - [ ] 10 documents upserted with metadata
 - [ ] 5 different queries tested
 - [ ] Similarity score threshold identified for your domain
-
-**Hint:** Try deliberately unrelated queries to see low scores. Document your findings.
 
 ---
 
@@ -491,8 +460,6 @@ rag21d_learners/
 - [ ] Metadata or namespace filtering working correctly
 - [ ] Performance measured (query latency logged)
 
-**Hint:** Use metadata filters with user IDs or leverage Pinecone namespaces. Test cross-contamination scenarios.
-
 ---
 
 ### 🔴 Hard Challenge (1-3 hours, portfolio-worthy)
@@ -501,18 +468,53 @@ rag21d_learners/
 
 **Task:** Calculate standard deviation of top-k scores:
 - High std dev = clear winners → use higher threshold (0.85)
-- Low std dev = ambiguous results → use lower threshold (0.6) to avoid false negatives
-
-Include monitoring dashboard showing threshold decisions over time.
+- Low std dev = ambiguous results → use lower threshold (0.6)
 
 **Success criteria:**
 - [ ] Dynamic threshold calculation implemented
 - [ ] Logic based on statistical analysis of scores
-- [ ] Test cases covering edge cases (all high scores, all low scores, mixed)
+- [ ] Test cases covering edge cases
 - [ ] Dashboard or logs showing threshold adjustments
 - [ ] Documentation explaining algorithm
 
-**This is portfolio-worthy!** Bonus: Add A/B testing to compare fixed vs dynamic thresholds on benchmark dataset.
+---
+
+## 🔧 Development & Testing
+
+### Running Tests
+
+```bash
+# Run all smoke tests
+python tests/test_smoke.py
+
+# Or with pytest
+python -m pytest tests/test_smoke.py -v
+
+# Run specific test
+python -m pytest tests/test_smoke.py::test_cosine_similarity_identical -v
+```
+
+### Starting Development Server
+
+```bash
+# Linux/Mac
+export PYTHONPATH=$PWD
+uvicorn app:app --reload --host 0.0.0.0 --port 8000
+
+# Windows PowerShell
+powershell -c "$env:PYTHONPATH='$PWD'; uvicorn app:app --reload"
+
+# Or use the script
+.\scripts\run_local.ps1
+```
+
+### Privacy & Outputs Policy
+
+⚠️ **Before committing:**
+- Never commit `.env` file (contains API keys)
+- Clear notebook outputs: `Cell → All Output → Clear` (Jupyter)
+- Review `.gitignore` to ensure sensitive files are excluded
+- Example data is intentionally generic and non-sensitive
 
 ---
 
@@ -521,26 +523,17 @@ Include monitoring dashboard showing threshold decisions over time.
 - **Pinecone Documentation:** https://docs.pinecone.io/
 - **OpenAI Embeddings Guide:** https://platform.openai.com/docs/guides/embeddings
 - **ChromaDB Docs:** https://docs.trychroma.com/
+- **FastAPI Documentation:** https://fastapi.tiangolo.com/
 - **Vector Search Explained:** https://www.pinecone.io/learn/vector-search/
-- **Cosine Similarity Math:** https://en.wikipedia.org/wiki/Cosine_similarity
-
----
-
-## 🆘 Getting Help
-
-1. **Check this README** for common issues in Troubleshooting section
-2. **Review notebook Section 6** for failure scenarios and fixes
-3. **Run smoke tests:** `python tests_smoke.py`
-4. **Validate config:** `python config.py`
-5. **Check logs:** All functions use Python logging (INFO/ERROR levels)
-6. **Inspect code:** Modules have comprehensive docstrings and type hints
 
 ---
 
 ## 📝 License
 
+MIT License - See [LICENSE](LICENSE) file for details.
+
 This learning workspace is part of the RAG21D course materials. Free to use for educational purposes.
 
 ---
 
-**Ready to master vector databases?** Start with the notebook (`M1_1_Vector_Databases.ipynb`) or dive straight into the CLI tool! 🚀
+**Ready to master vector databases?** Start with the notebook (`notebooks/M1_1_Vector_Databases.ipynb`) or dive into the API! 🚀

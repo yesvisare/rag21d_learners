@@ -29,6 +29,22 @@ python-dotenv==1.0.1
 # Used for: showing progress when upserting large datasets
 tqdm==4.66.5
 
+# FastAPI for REST API endpoints
+# Used for: exposing module functionality as HTTP API
+fastapi==0.115.0
+
+# Uvicorn for serving FastAPI application
+# Used for: running the API server
+uvicorn==0.31.0
+
+# Pytest for running test suite
+# Used for: executing tests with python -m pytest
+pytest==8.3.3
+
+# Requests for HTTP testing (used with TestClient)
+# Used for: testing API endpoints
+requests==2.32.3
+
 # =============================================================================
 # Installation Instructions
 # =============================================================================

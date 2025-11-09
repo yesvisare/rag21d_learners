@@ -32,8 +32,8 @@ from openai import OpenAI, RateLimitError
 from pinecone import Pinecone, ServerlessSpec
 from tqdm import tqdm
 
-# Import configuration
-import config
+# Import configuration from package
+from src.m1_1_vector_databases import config
 
 # ============================================================================
 # LOGGING CONFIGURATION
@@ -51,7 +51,7 @@ logger = logging.getLogger(__name__)
 # DATA LOADING
 # ============================================================================
 
-def load_example_texts(file_path: str = "example_data.txt") -> List[str]:
+def load_example_texts(file_path: str = "data/example/example_data.txt") -> List[str]:
     """
     Load example text chunks from data file.
 
@@ -71,7 +71,7 @@ def load_example_texts(file_path: str = "example_data.txt") -> List[str]:
     if not data_file.exists():
         raise FileNotFoundError(
             f"Data file not found: {file_path}\n"
-            f"Please ensure example_data.txt exists in the current directory."
+            f"Please ensure example_data.txt exists at data/example/example_data.txt"
         )
 
     with open(data_file, 'r', encoding='utf-8') as f:

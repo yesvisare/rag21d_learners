@@ -1,0 +1,66 @@
+# =============================================================================
+# M1.1 Vector Databases - Git Ignore File
+# =============================================================================
+
+# Environment variables (contains API keys - NEVER commit)
+.env
+
+# Python bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+notebooks/.ipynb_checkpoints/
+
+# IDE settings
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+*.cover
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+*.egg
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+
+# Data directories (if containing sensitive data)
+# Uncomment if storing user-specific data
+# data/private/
+
+# Model files (if large)
+# *.pkl
+# *.joblib
+# *.h5
+
+# FastAPI specific
+.fastapi_cache/
