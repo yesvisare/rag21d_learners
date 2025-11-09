@@ -7,9 +7,9 @@ from fastapi.responses import JSONResponse
 from dotenv import load_dotenv
 import os
 
-from app.auth import verify_api_key, key_manager
-from app.limits import check_rate_limit_dependency
-from app.security import (
+from src.m3_3_api_security.auth import verify_api_key, key_manager
+from src.m3_3_api_security.limits import check_rate_limit_dependency
+from src.m3_3_api_security.security import (
     add_security_headers,
     configure_cors,
     QueryRequest,
@@ -193,7 +193,7 @@ async def global_exception_handler(request, exc):
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(
-        "app.main:app",
+        "app:app",
         host="0.0.0.0",
         port=8000,
         reload=True

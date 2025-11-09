@@ -3,9 +3,9 @@ M3.3 API Security - Test Suite
 Smoke tests for key management, auth, rate limiting, and security headers
 """
 import time
-from app.auth import APIKeyManager
-from app.limits import TokenBucketLimiter
-from app.security import QueryRequest, SECURITY_HEADERS
+from src.m3_3_api_security.auth import APIKeyManager
+from src.m3_3_api_security.limits import TokenBucketLimiter
+from src.m3_3_api_security.security import QueryRequest, SECURITY_HEADERS
 from pydantic import ValidationError
 
 
@@ -274,8 +274,3 @@ def run_all_tests():
     else:
         print("⚠️ Some tests failed")
         return 1
-
-
-if __name__ == "__main__":
-    exit_code = run_all_tests()
-    exit(exit_code)
