@@ -4,13 +4,13 @@ Tests key schema stability, stampede locks, TTL, semantic cache, and safe stubs.
 """
 import time
 import hashlib
-from m2_1_caching import (
+from src.m2_1_caching.module import (
     CacheKeyGenerator,
     MultiLayerCache,
     CacheMetrics,
     StampedeLock
 )
-import config
+from src.m2_1_caching import config
 
 
 def test_key_schema_stable():

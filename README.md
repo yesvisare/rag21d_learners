@@ -1,21 +1,73 @@
 # M2.1 — Caching Strategies for Cost Reduction
 
-Reduce RAG system costs by 30-70% with multi-layer Redis caching. This module teaches practical caching strategies, invalidation techniques, and failure patterns to avoid.
+## 📚 Learning Arc
 
-## 🎯 Learning Objectives
+### **Purpose**
+Learn to deploy multi-layer Redis caching to reduce RAG system costs by 30-70% through strategic query, embedding, and context caching. Master cache invalidation, stampede protection, and recognize when caching becomes counterproductive.
 
-- Deploy a multi-layer Redis caching system reducing RAG costs by 30-70%
-- Configure cache invalidation based on content freshness requirements
-- Diagnose and resolve five common production failures
-- Recognize scenarios where caching creates more problems than solutions
+### **Concepts Covered**
+- Multi-layer cache architecture (exact, semantic, embedding, context)
+- Hash-based exact matching with SHA-256 for collision-free keys
+- Semantic similarity caching using fuzzy string matching (BM25/MinHash)
+- Cache stampede prevention with per-key distributed locks
+- TTL (Time-To-Live) strategies for different cache layers
+- Invalidation patterns: manual, prefix-based, stale detection
+- Metrics tracking and ROI (Return on Investment) analysis
+- Trade-offs: query diversity vs. hit rates, freshness vs. staleness
+- Production failure modes: stampedes, memory exhaustion, hash collisions
 
-## 📦 What's Included
+### **After Completing This Module**
+You will be able to:
+- Implement a production-ready multi-layer cache for RAG systems
+- Configure appropriate TTLs based on content freshness requirements
+- Diagnose and resolve common caching failures (stampedes, stale data, low ROI)
+- Calculate cost savings and project ROI for caching infrastructure
+- Recognize scenarios where caching creates more problems than it solves
+- Design invalidation strategies that balance freshness and performance
+- Integrate caching into existing RAG pipelines without code changes
 
-- **`M2_1_Caching_Strategies.ipynb`** - Interactive tutorial with 8 sections
-- **`m2_1_caching.py`** - Production-ready multi-layer cache implementation
-- **`config.py`** - Environment and client configuration
-- **`tests_caching.py`** - Smoke tests for key functionality
-- **`example_data.txt`** - Sample FAQ queries for testing
+### **Context in Track**
+This is Module 2.1 in the RAG optimization track. Prerequisites include basic RAG system understanding (M1.x modules). This module feeds into:
+- M2.2: Query Optimization & Prompt Engineering
+- M2.3: Model Selection & Cost-Performance Trade-offs
+- M3.1: Chunking Strategies & Vector Databases
+
+---
+
+## 📦 Project Structure
+
+```
+rag21d_learners/
+├── README.md                   # This file
+├── LICENSE                     # MIT License
+├── .gitignore                  # Git ignore rules
+├── .env.example                # Environment template
+├── requirements.txt            # Python dependencies
+├── app.py                      # FastAPI application (thin wrapper)
+│
+├── src/
+│   └── m2_1_caching/
+│       ├── __init__.py         # Package exports + learning arc
+│       ├── config.py           # Configuration & client setup
+│       ├── module.py           # Core multi-layer cache implementation
+│       └── router.py           # FastAPI endpoints
+│
+├── notebooks/
+│   └── M2_1_Caching_Strategies.ipynb  # Interactive tutorial
+│
+├── tests/
+│   ├── test_caching.py         # Core functionality tests
+│   └── test_smoke.py           # API endpoint tests
+│
+├── data/
+│   └── example/
+│       └── example_data.txt    # Sample FAQ queries
+│
+└── scripts/
+    └── run_local.ps1           # Windows development server script
+```
+
+---
 
 ## 🚀 Quickstart
 
@@ -45,17 +97,146 @@ cp .env.example .env
 # - REDIS_URL=redis://localhost:6379/0
 ```
 
-### 4. Run Notebook
+### 4. Run the API Server
 
+**Linux/Mac:**
 ```bash
-jupyter notebook M2_1_Caching_Strategies.ipynb
+export PYTHONPATH=$PWD
+uvicorn app:app --reload --host 0.0.0.0 --port 8000
 ```
 
-### 5. Run Tests
+**Windows (PowerShell):**
+```powershell
+.\scripts\run_local.ps1
+```
+
+**Windows (Command Line):**
+```cmd
+set PYTHONPATH=%CD%
+uvicorn app:app --reload --host 0.0.0.0 --port 8000
+```
+
+API will be available at:
+- **Swagger UI:** http://localhost:8000/docs
+- **ReDoc:** http://localhost:8000/redoc
+- **Health Check:** http://localhost:8000/m2_1_caching/health
+
+### 5. Run Jupyter Notebook
 
 ```bash
-python tests_caching.py
+jupyter notebook notebooks/M2_1_Caching_Strategies.ipynb
 ```
+
+### 6. Run Tests
+
+```bash
+pytest tests/ -v
+```
+
+---
+
+## 🔧 Usage Examples
+
+### Library Usage
+
+```python
+from src.m2_1_caching.module import MultiLayerCache
+from src.m2_1_caching.config import get_redis, get_openai
+
+# Initialize cache
+cache = MultiLayerCache(get_redis(), get_openai())
+
+# Check exact cache
+query = "How do I reset my password?"
+result = cache.get_exact(query)
+if not result:
+    # Process query...
+    result = {"answer": "Visit settings > security > reset password"}
+    cache.set_exact(query, result)
+
+# Semantic cache (matches similar queries)
+cache.set_semantic("What are your hours?", {"answer": "9-5 EST"})
+result = cache.get_semantic("What time are you open?", threshold=0.85)
+
+# Embedding cache with stampede protection
+embedding = cache.compute_or_get_embedding("machine learning")
+
+# Context cache (document retrieval)
+doc_ids = ["doc_123", "doc_456"]
+contexts = [{"id": "doc_123", "text": "..."}]
+cache.set_context(doc_ids, contexts)
+```
+
+### API Usage
+
+**Get Cache Metrics:**
+```bash
+curl http://localhost:8000/m2_1_caching/metrics
+```
+
+Response:
+```json
+{
+  "hits": 42,
+  "misses": 18,
+  "hit_rate": 70.0,
+  "stampede_prevented": 3,
+  "invalidations": 5,
+  "errors": 0,
+  "summary": "Hits: 42, Misses: 18, Hit Rate: 70.0%, ..."
+}
+```
+
+**Invalidate Cache by Prefix:**
+```bash
+curl -X POST http://localhost:8000/m2_1_caching/invalidate \
+  -H "Content-Type: application/json" \
+  -d '{"prefix":"semantic:"}'
+```
+
+Response:
+```json
+{
+  "prefix": "semantic:",
+  "keys_invalidated": 127,
+  "message": "Invalidated 127 keys with prefix 'semantic:'"
+}
+```
+
+**Health Check:**
+```bash
+curl http://localhost:8000/m2_1_caching/health
+```
+
+Response:
+```json
+{
+  "status": "ok",
+  "module": "m2_1_caching",
+  "redis_available": true,
+  "openai_available": true
+}
+```
+
+### CLI Usage
+
+```bash
+python -m src.m2_1_caching.module
+```
+
+Output:
+```
+M2.1 Multi-Layer Caching System
+================================
+
+Initializing clients...
+✓ Redis connected
+✓ OpenAI configured
+
+Cache metrics: Hits: 0, Misses: 0, Hit Rate: 0.0%, ...
+```
+
+---
 
 ## 🏗️ Architecture
 
@@ -65,16 +246,19 @@ python tests_caching.py
 - Exact match via SHA-256 hash
 - Semantic match via fuzzy string similarity (rapidfuzz)
 - Stores final LLM responses
+- TTL: 1 hour (exact), 30 minutes (semantic)
 
 **Layer 2: Embedding Cache**
 - Caches vector embeddings (1536 dims = ~6KB each)
 - Reduces OpenAI API calls for repeated text
 - TTL: 2 hours (embeddings rarely change)
+- Includes stampede protection
 
 **Layer 3: Retrieved-Context Cache**
 - Caches document snippets fetched from vector DB
-- Keyed by sorted document IDs
+- Keyed by sorted document IDs (order-independent)
 - Multiple queries often retrieve same documents
+- TTL: 30 minutes
 
 ### Request Flow
 
@@ -83,50 +267,7 @@ Query → Exact Cache? → Semantic Cache? → Embedding Cache?
         → Vector DB → Context Cache? → LLM → Cache Result
 ```
 
-## 🔧 How Cache Layers Work
-
-### Exact Cache
-```python
-from m2_1_caching import MultiLayerCache
-import config
-
-cache = MultiLayerCache(config.get_redis(), config.get_openai())
-
-# Check exact match
-cached = cache.get_exact("How do I reset my password?")
-if not cached:
-    # Process query...
-    response = {"answer": "Visit settings..."}
-    cache.set_exact(query, response)
-```
-
-### Semantic Cache
-```python
-# Similar queries hit cache
-cache.set_semantic("What are your hours?", {"answer": "9-5 EST"})
-
-# This will hit cache even with different wording
-result = cache.get_semantic("What time are you open?", threshold=0.85)
-```
-
-### Embedding Cache
-```python
-# Automatic caching with stampede protection
-embedding = cache.compute_or_get_embedding("machine learning")
-# Second call hits cache instantly
-embedding2 = cache.compute_or_get_embedding("machine learning")
-```
-
-### Context Cache
-```python
-# Cache retrieved documents
-doc_ids = ["doc_123", "doc_456"]
-contexts = [{"id": "doc_123", "text": "..."}]
-cache.set_context(doc_ids, contexts)
-
-# Retrieves even with different order
-cache.get_context(["doc_456", "doc_123"])  # Cache HIT
-```
+---
 
 ## 🗑️ Invalidation Strategies
 
@@ -159,6 +300,8 @@ cache.invalidate_stale(max_age_seconds=3600)
 cache.flush_all()
 ```
 
+---
+
 ## ⚠️ When NOT to Use Caching
 
 Caching becomes counterproductive when:
@@ -176,6 +319,8 @@ Caching becomes counterproductive when:
 | News Search | 10,000+ | >90% | <5 min | ❌ Don't Cache |
 | Support Docs | 2,000+ | 40% | >30 min | ✅ Cache |
 | Research Q&A | 500 | 85% | Any | ❌ Don't Cache |
+
+---
 
 ## 🐛 Common Failures & Fixes
 
@@ -199,6 +344,8 @@ Caching becomes counterproductive when:
 **Problem:** <20% hit rate wastes infrastructure
 **Fix:** Monitor metrics, disable caching if hit rate stays low
 
+---
+
 ## 📊 Monitoring Metrics
 
 ```python
@@ -210,6 +357,8 @@ hit_rate = cache.metrics.get_hit_rate()
 if hit_rate < 20:
     print("⚠️ Consider disabling cache - ROI too low")
 ```
+
+---
 
 ## 🔍 Troubleshooting
 
@@ -250,26 +399,30 @@ print(f"Diversity: {diversity*100:.0f}%")
 - If diversity 50-90%: Adjust semantic threshold
 - If diversity <50%: Increase TTLs
 
-### Memory Issues
+### Import Errors
 
-**Error:** Redis OOM (Out of Memory)
+**Error:** `ModuleNotFoundError: No module named 'src'`
 
-**Solutions:**
-1. Configure Redis `maxmemory` policy:
-   ```
-   maxmemory 256mb
-   maxmemory-policy allkeys-lru
-   ```
-2. Reduce embedding cache TTL
-3. Disable context cache for large documents
-4. Monitor with: `redis-cli INFO memory`
+**Solution:** Set PYTHONPATH before running:
+```bash
+export PYTHONPATH=$PWD  # Linux/Mac
+set PYTHONPATH=%CD%     # Windows CMD
+$env:PYTHONPATH="$PWD"  # Windows PowerShell
+```
+
+---
 
 ## 🧪 Testing
 
-Run smoke tests to verify functionality:
-
+Run all tests:
 ```bash
-python tests_caching.py
+pytest tests/ -v
+```
+
+Run specific test suite:
+```bash
+pytest tests/test_caching.py -v   # Core functionality
+pytest tests/test_smoke.py -v     # API endpoints
 ```
 
 Tests verify:
@@ -280,42 +433,9 @@ Tests verify:
 - ✅ Safe stubs when services unavailable
 - ✅ Metrics tracking accuracy
 - ✅ Context cache order independence
+- ✅ API endpoints return correct responses
 
-## 📚 Configuration Reference
-
-### Environment Variables
-
-```bash
-# Required
-OPENAI_API_KEY=sk-...
-REDIS_URL=redis://localhost:6379/0
-
-# Cache Layer Toggles
-ENABLE_EXACT_CACHE=true
-ENABLE_SEMANTIC_CACHE=true
-ENABLE_EMBEDDING_CACHE=true
-ENABLE_CONTEXT_CACHE=true
-
-# TTL Settings (seconds)
-TTL_EXACT_CACHE=3600        # 1 hour
-TTL_SEMANTIC_CACHE=1800     # 30 minutes
-TTL_EMBEDDING_CACHE=7200    # 2 hours
-TTL_CONTEXT_CACHE=1800      # 30 minutes
-
-# Semantic Matching
-SEMANTIC_THRESHOLD=0.85     # 0.0 - 1.0
-
-# Redis Connection Pool
-REDIS_MAX_CONNECTIONS=50
-REDIS_SOCKET_TIMEOUT=5
-```
-
-### Cache Key Prefixes
-
-- `exact:` - Exact query matches (SHA-256)
-- `semantic:` - Semantic similarity bucket
-- `embed:` - Vector embeddings
-- `context:` - Retrieved document contexts
+---
 
 ## 📈 Cost Projection
 
@@ -332,13 +452,19 @@ Assumes:
 - $0.002 per 1K tokens (GPT-3.5-turbo)
 - $10/month Redis Cloud basic tier
 
+---
+
 ## 🤝 Contributing
 
 Found a bug or have suggestions? Please open an issue or submit a PR.
 
+---
+
 ## 📄 License
 
-This module is part of the RAG21D learner series.
+MIT License - see [LICENSE](LICENSE) file for details.
+
+---
 
 ## 🔗 Related Modules
 
@@ -348,4 +474,4 @@ This module is part of the RAG21D learner series.
 
 ---
 
-**Ready to reduce your RAG costs?** Open `M2_1_Caching_Strategies.ipynb` and start learning! 🚀
+**Ready to reduce your RAG costs?** Start with the [Jupyter notebook](notebooks/M2_1_Caching_Strategies.ipynb) or fire up the [API server](#4-run-the-api-server)! 🚀
