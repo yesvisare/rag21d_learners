@@ -2,6 +2,34 @@
 
 Combines BM25 sparse retrieval with dense vector embeddings using alpha weighting and Reciprocal Rank Fusion (RRF).
 
+## Learning Arc
+
+### Purpose
+This module teaches you to build production-grade hybrid search systems that combine the precision of keyword matching (BM25) with the semantic understanding of dense embeddings. You'll learn when hybrid search justifies its complexity overhead and when simpler approaches suffice.
+
+### Concepts Covered
+- **BM25 Sparse Retrieval**: Term-frequency-based ranking for exact matches
+- **Dense Vector Embeddings**: Neural network-powered semantic search
+- **Alpha Weighting**: Balancing sparse and dense scores with tunable weights
+- **Reciprocal Rank Fusion (RRF)**: Rank-based merging without score normalization
+- **Smart Query Analysis**: Auto-detecting query types to adjust search strategy
+- **Cost-Benefit Analysis**: Understanding latency, complexity, and accuracy trade-offs
+
+### After Completing
+You will be able to:
+- ✅ Implement hybrid search with configurable merge strategies
+- ✅ Tune alpha weights based on query characteristics
+- ✅ Decide when hybrid search adds value vs overhead
+- ✅ Debug common issues (score normalization, namespace mismatches, etc.)
+- ✅ Estimate costs and latency for production deployments
+- ✅ Choose between alpha weighting and RRF for your use case
+
+### Context in Track
+- **Prerequisite**: M1 (Vector Databases), M2 (Cost Optimization)
+- **Builds on**: Dense embeddings from M1.4, cost awareness from M2.1
+- **Prepares for**: M4.2 (Beyond Free Tier), M4.3 (Portfolio Projects)
+- **Real-world application**: E-commerce search, technical documentation, mixed-content platforms
+
 ## Architecture
 
 ```
@@ -105,7 +133,7 @@ PINECONE_INDEX_NAME=hybrid-search
 ### Basic Example
 
 ```python
-from m4_1_hybrid_search import HybridSearchEngine
+from src.m4_1_hybrid_search import HybridSearchEngine
 
 # Initialize
 engine = HybridSearchEngine(
@@ -238,22 +266,38 @@ Total:       ~$0.15
 
 Run smoke tests:
 ```bash
-python tests_hybrid_merge.py
+# On Windows PowerShell
+powershell ./scripts/run_tests.ps1
+
+# On Linux/Mac
+PYTHONPATH=$PWD pytest
 ```
 
 Run notebook demos:
 ```bash
-jupyter notebook M4_1_Hybrid_Search.ipynb
+jupyter notebook notebooks/M4_1_Hybrid_Search.ipynb
 ```
 
 ## Files
 
-- `m4_1_hybrid_search.py`: Main module with HybridSearchEngine
-- `M4_1_Hybrid_Search.ipynb`: Interactive tutorial (7 sections)
-- `requirements.txt`: Python dependencies
-- `.env.example`: Configuration template
-- `tests_hybrid_merge.py`: Smoke tests
-- `README.md`: This file
+```
+.
+├── src/
+│   └── m4_1_hybrid_search/
+│       └── __init__.py          # HybridSearchEngine class & core logic
+├── notebooks/
+│   └── M4_1_Hybrid_Search.ipynb # Interactive tutorial (7 sections)
+├── tests/
+│   ├── __init__.py
+│   └── test_hybrid_merge.py     # Smoke tests
+├── scripts/
+│   └── run_tests.ps1            # PowerShell test runner
+├── requirements.txt             # Python dependencies
+├── .env.example                 # Configuration template
+├── .gitignore                   # Git ignore patterns
+├── LICENSE                      # MIT License
+└── README.md                    # This file
+```
 
 ## Limits & Costs
 

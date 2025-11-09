@@ -5,7 +5,7 @@ Tests RRF ranking, alpha effects, and stub mode functionality.
 
 import os
 import sys
-from m4_1_hybrid_search import HybridSearchEngine
+from src.m4_1_hybrid_search import HybridSearchEngine
 
 
 def test_bm25_basic():
