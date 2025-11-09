@@ -9,7 +9,7 @@ from datetime import datetime
 from functools import wraps
 from typing import Optional, Dict, Any
 from prometheus_client import Counter, Histogram, Gauge, start_http_server, REGISTRY
-import config
+from . import config
 
 
 class RAGMetrics:

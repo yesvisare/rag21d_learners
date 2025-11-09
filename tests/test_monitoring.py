@@ -4,7 +4,7 @@ Smoke tests for metrics, logging, and decorators
 """
 import time
 import pytest
-from m2_3_monitoring import (
+from src.m2_3_monitoring import (
     RAGMetrics,
     StructuredLogger,
     monitored_query,
@@ -140,7 +140,7 @@ def test_structured_logger():
 def test_metrics_endpoint():
     """Test that metrics server can start"""
     # Try to start on a different port to avoid conflicts
-    success = start_metrics_server(port=8001)
+    success = start_metrics_server(port=8002)
 
     # Should either succeed or report already running
     assert isinstance(success, bool)
@@ -150,7 +150,6 @@ def test_metrics_endpoint():
 
 def test_metrics_server_exposes_data():
     """Test that /metrics endpoint exposes Prometheus format"""
-    import urllib.request
     from prometheus_client import generate_latest
 
     # Generate metrics in Prometheus format
