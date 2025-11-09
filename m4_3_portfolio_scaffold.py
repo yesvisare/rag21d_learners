@@ -8,9 +8,12 @@ Usage:
 
 Example:
     python m4_3_portfolio_scaffold.py DocuMentor --path ./projects
+    python m4_3_portfolio_scaffold.py MyProject --path ./output --dry-run
+    python m4_3_portfolio_scaffold.py MyProject --path ./output --force --no-frontend
 """
 
 import argparse
+import json
 import os
 from pathlib import Path
 from typing import Dict, List
@@ -19,16 +22,39 @@ from typing import Dict, List
 class PortfolioScaffolder:
     """Creates professional portfolio project structure."""
 
-    def __init__(self, project_name: str, base_path: str = "."):
+    def __init__(
+        self,
+        project_name: str,
+        base_path: str = ".",
+        dry_run: bool = False,
+        force: bool = False,
+        no_frontend: bool = False,
+        no_ci: bool = False
+    ):
         self.project_name = project_name
         self.base_path = Path(base_path) / project_name.lower()
         self.created_files: List[str] = []
         self.created_dirs: List[str] = []
+        self.dry_run = dry_run
+        self.force = force
+        self.no_frontend = no_frontend
+        self.no_ci = no_ci
+        self.planned_files: List[str] = []
+        self.planned_dirs: List[str] = []
 
     def create_structure(self) -> None:
         """Create the complete project structure."""
-        print(f"Creating portfolio project: {self.project_name}")
+        if self.dry_run:
+            print(f"[DRY RUN] Planning portfolio project: {self.project_name}")
+        else:
+            print(f"Creating portfolio project: {self.project_name}")
         print(f"Location: {self.base_path}\n")
+
+        # Check if directory exists
+        if self.base_path.exists() and not self.force and not self.dry_run:
+            print(f"❌ Error: Directory {self.base_path} already exists.")
+            print("Use --force to overwrite or choose a different path.")
+            return
 
         # Create directory structure
         self._create_directories()
@@ -39,40 +65,58 @@ class PortfolioScaffolder:
         # Create backend structure
         self._create_backend_files()
 
-        # Create frontend structure
-        self._create_frontend_files()
+        # Create frontend structure (if not disabled)
+        if not self.no_frontend:
+            self._create_frontend_files()
 
         # Create documentation
         self._create_documentation()
 
-        # Create CI/CD
-        self._create_cicd()
+        # Create CI/CD (if not disabled)
+        if not self.no_ci:
+            self._create_cicd()
 
         # Summary
         self._print_summary()
+
+        # Write summary JSON (if not dry-run)
+        if not self.dry_run:
+            self._write_summary_json()
 
     def _create_directories(self) -> None:
         """Create all necessary directories."""
         dirs = [
             "",
-            ".github/workflows",
             "backend",
             "backend/api",
             "backend/core",
             "backend/ingestion",
             "backend/tests",
-            "frontend",
-            "frontend/public",
-            "frontend/src",
-            "frontend/src/components",
             "docs",
             "scripts",
         ]
 
+        # Add CI directories if not disabled
+        if not self.no_ci:
+            dirs.append(".github/workflows")
+
+        # Add frontend directories if not disabled
+        if not self.no_frontend:
+            dirs.extend([
+                "frontend",
+                "frontend/public",
+                "frontend/src",
+                "frontend/src/components",
+            ])
+
         for dir_path in dirs:
             full_path = self.base_path / dir_path
-            full_path.mkdir(parents=True, exist_ok=True)
-            self.created_dirs.append(str(full_path))
+
+            if self.dry_run:
+                self.planned_dirs.append(str(full_path))
+            else:
+                full_path.mkdir(parents=True, exist_ok=True)
+                self.created_dirs.append(str(full_path))
 
     def _create_config_files(self) -> None:
         """Create root-level configuration files."""
@@ -986,38 +1030,105 @@ jobs:
     def _write_file(self, relative_path: str, content: str) -> None:
         """Write a file with given content."""
         file_path = self.base_path / relative_path
-        file_path.parent.mkdir(parents=True, exist_ok=True)
-        file_path.write_text(content)
-        self.created_files.append(str(file_path))
+
+        if self.dry_run:
+            self.planned_files.append(str(file_path))
+        else:
+            file_path.parent.mkdir(parents=True, exist_ok=True)
+            file_path.write_text(content)
+            self.created_files.append(str(file_path))
 
     def _print_summary(self) -> None:
         """Print creation summary."""
         print("\n" + "="*60)
-        print("✅ Portfolio Project Scaffold Created Successfully!")
-        print("="*60)
-        print(f"\nProject: {self.project_name}")
-        print(f"Location: {self.base_path}")
-        print(f"\nCreated {len(self.created_dirs)} directories")
-        print(f"Created {len(self.created_files)} files")
 
-        print("\n📋 Next Steps:")
-        print(f"1. cd {self.base_path}")
-        print("2. cp .env.example .env")
-        print("3. Edit .env with your API keys")
-        print("4. docker-compose up")
-        print("\n💡 Tips:")
-        print("- Review backend/core/ files and implement TODOs")
-        print("- Add your documentation scraping logic")
-        print("- Customize frontend components")
-        print("- Write comprehensive tests")
-        print("- Update README with your specifics")
-        print("\n🚀 Happy building!")
+        if self.dry_run:
+            print("📋 DRY RUN PLAN")
+            print("="*60)
+            print(f"\nProject: {self.project_name}")
+            print(f"Location: {self.base_path}")
+            print(f"\nWould create {len(self.planned_dirs)} directories")
+            print(f"Would create {len(self.planned_files)} files")
+
+            if self.no_frontend:
+                print("\n⚠️  Frontend: DISABLED (--no-frontend)")
+            if self.no_ci:
+                print("⚠️  CI/CD: DISABLED (--no-ci)")
+
+            print("\n📁 Sample directories:")
+            for d in self.planned_dirs[:5]:
+                print(f"  - {d}")
+            if len(self.planned_dirs) > 5:
+                print(f"  ... and {len(self.planned_dirs) - 5} more")
+
+            print("\n📄 Sample files:")
+            for f in self.planned_files[:10]:
+                print(f"  - {f}")
+            if len(self.planned_files) > 10:
+                print(f"  ... and {len(self.planned_files) - 10} more")
+
+            print("\n💡 To actually create the scaffold, run without --dry-run")
+        else:
+            print("✅ Portfolio Project Scaffold Created Successfully!")
+            print("="*60)
+            print(f"\nProject: {self.project_name}")
+            print(f"Location: {self.base_path}")
+            print(f"\nCreated {len(self.created_dirs)} directories")
+            print(f"Created {len(self.created_files)} files")
+
+            print("\n📋 Next Steps:")
+            print(f"1. cd {self.base_path}")
+            print("2. cp .env.example .env")
+            print("3. Edit .env with your API keys")
+            print("4. docker-compose up")
+            print("\n💡 Tips:")
+            print("- Review backend/core/ files and implement TODOs")
+            print("- Add your documentation scraping logic")
+            if not self.no_frontend:
+                print("- Customize frontend components")
+            print("- Write comprehensive tests")
+            print("- Update README with your specifics")
+            print("\n🚀 Happy building!")
+
+    def _write_summary_json(self) -> None:
+        """Write scaffold summary to JSON file."""
+        summary = {
+            "project_name": self.project_name,
+            "location": str(self.base_path),
+            "created_dirs": self.created_dirs,
+            "created_files": self.created_files,
+            "options": {
+                "no_frontend": self.no_frontend,
+                "no_ci": self.no_ci
+            }
+        }
+
+        summary_path = self.base_path / "scaffold_summary.json"
+        with open(summary_path, "w") as f:
+            json.dump(summary, f, indent=2)
+
+        print(f"\n📊 Summary written to: {summary_path}")
 
 
 def main():
     """Main entry point."""
     parser = argparse.ArgumentParser(
-        description="Create a portfolio project scaffold for RAG applications"
+        description="Create a portfolio project scaffold for RAG applications",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  # Basic usage
+  python m4_3_portfolio_scaffold.py DocuMentor --path ./projects
+
+  # Preview without creating files
+  python m4_3_portfolio_scaffold.py MyProject --dry-run
+
+  # Skip frontend generation
+  python m4_3_portfolio_scaffold.py BackendOnly --no-frontend
+
+  # Force overwrite existing directory
+  python m4_3_portfolio_scaffold.py DocuMentor --force
+        """
     )
     parser.add_argument(
         "project_name",
@@ -1030,10 +1141,37 @@ def main():
         default=".",
         help="Base path for project creation (default: current directory)"
     )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Show what would be created without actually creating files"
+    )
+    parser.add_argument(
+        "--force",
+        action="store_true",
+        help="Allow overwriting existing directory"
+    )
+    parser.add_argument(
+        "--no-frontend",
+        action="store_true",
+        help="Skip frontend (React) structure generation"
+    )
+    parser.add_argument(
+        "--no-ci",
+        action="store_true",
+        help="Skip CI/CD (GitHub Actions) workflow generation"
+    )
 
     args = parser.parse_args()
 
-    scaffolder = PortfolioScaffolder(args.project_name, args.path)
+    scaffolder = PortfolioScaffolder(
+        args.project_name,
+        args.path,
+        dry_run=args.dry_run,
+        force=args.force,
+        no_frontend=args.no_frontend,
+        no_ci=args.no_ci
+    )
     scaffolder.create_structure()
 
 

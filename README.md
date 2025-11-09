@@ -4,6 +4,42 @@
 
 This workspace provides everything you need to create, document, and present a production-quality portfolio project for RAG (Retrieval-Augmented Generation) systems.
 
+---
+
+## 📚 Learning Arc
+
+### Purpose
+Transform your RAG knowledge into a professional portfolio that demonstrates real-world engineering skills. This module bridges the gap between "I completed tutorials" and "I can build production systems" by providing scaffolding, templates, and decision frameworks for creating compelling portfolio projects that get you hired.
+
+### Concepts Covered
+- **Strategic portfolio planning** - When portfolios work (and when they don't)
+- **Professional repository architecture** - Backend, frontend, Docker, CI/CD
+- **Production-quality documentation** - READMEs, demos, metrics that matter
+- **Career decision frameworks** - Portfolio vs. LeetCode vs. open source contributions
+- **Common failure prevention** - Real mistakes and how to avoid them
+- **Alternative career strategies** - FAANG prep, technical blogging, OSS contributions
+
+### After Completing This Module
+You will be able to:
+- ✅ Create production-ready RAG project structures with one command
+- ✅ Make informed decisions about portfolio investment vs. alternatives
+- ✅ Write professional documentation that gets recruiter attention
+- ✅ Deploy live demos that work reliably
+- ✅ Avoid the top 5 portfolio failures that plague 80% of projects
+- ✅ Present your work effectively on LinkedIn and GitHub
+- ✅ Evaluate trade-offs: time, cost, and opportunity cost of different strategies
+
+### Context in RAG21D Track
+**Module 4** focuses on advanced techniques and career preparation:
+- M4.1: Hybrid Search (technical depth)
+- M4.2: Beyond Pinecone Free Tier (scaling considerations)
+- **M4.3: Portfolio Project Showcase** ← You are here (career application)
+- M4.4: Course Wrap-up & Next Steps (continued learning)
+
+This module takes everything you've learned about RAG systems and packages it for maximum career impact. You'll use tools and templates to create portfolio projects that demonstrate the skills from Modules 1-3 while avoiding common pitfalls that waste months of effort.
+
+---
+
 ## What's Included
 
 ### 📓 Jupyter Notebook
