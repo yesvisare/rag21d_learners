@@ -4,18 +4,42 @@
 
 A production-ready document processing pipeline for RAG systems. Transforms raw documents (PDF, TXT, Markdown) into searchable vector embeddings stored in Pinecone.
 
-## What You'll Learn
+---
 
-This module teaches you to build a complete document processing pipeline:
+## Purpose
 
-- **Extract** text from PDFs (PyMuPDF), plain text, and Markdown files
-- **Clean** text by normalizing Unicode, removing artifacts, and fixing line breaks
-- **Chunk** documents using three strategies: fixed-size, semantic, and paragraph-aware
-- **Enrich** chunks with metadata (IDs, hashes, counts, semantic flags)
-- **Embed** text using OpenAI's `text-embedding-3-small`
-- **Store** vectors in Pinecone with metadata for filtering and retrieval
+Transform raw documents into searchable vector embeddings for production RAG systems. This module teaches the complete pipeline from document extraction to Pinecone storage, handling multi-format extraction, text normalization, intelligent chunking, metadata enrichment, and vector storage.
 
-You'll also learn the honest trade-offs: when to use custom pipelines vs. managed services vs. long-context embeddings.
+## Concepts Covered
+
+- **Multi-format extraction**: PyMuPDF for PDFs, plain text readers with encoding fallback
+- **Text cleaning**: Unicode normalization (NFKC), artifact removal, line-break fixing
+- **Chunking strategies**: Fixed-size, semantic (recursive), and paragraph-aware approaches
+- **Metadata enrichment**: IDs, content hashing, counts, semantic flags (code, lists, headings)
+- **Batch embedding**: OpenAI text-embedding-3-small with efficient batching
+- **Vector storage**: Pinecone upsert with metadata size limits and deduplication
+- **Production patterns**: Error handling, logging, graceful degradation without API keys
+
+## After Completing This Module
+
+You will be able to:
+- Extract text from PDFs and preserve per-page metadata
+- Clean raw text to remove Unicode artifacts and PDF noise
+- Choose appropriate chunking strategies for different document types
+- Enrich chunks with semantic metadata for precise filtering
+- Generate and batch embeddings cost-effectively (~$0.13 per million tokens)
+- Store vectors in Pinecone with proper metadata trimming
+- Handle common failures (Unicode errors, memory exhaustion, bad chunking, duplicate chunks)
+- Make informed decisions between custom pipelines, managed services, and long-context embeddings
+
+## Context in Track
+
+- **M1.1**: Introduced vector databases and Pinecone fundamentals
+- **M1.2**: Covered Pinecone data model, indexing, and metadata filtering
+- **M1.3** (this module): Document processing pipeline (extraction to storage)
+- **M1.4** (next): Query pipeline and response generation (retrieval to answer)
+
+---
 
 ## Quickstart
 
@@ -31,34 +55,124 @@ Copy `.env.example` to `.env` and add your keys:
 
 ```bash
 cp .env.example .env
-# Edit .env with your keys
+# Edit .env with your OpenAI and Pinecone API keys
 ```
 
 ### 3. Run Tests
 
 ```bash
-python tests_processing.py
+# Smoke tests (FastAPI endpoints)
+python tests/test_smoke.py
+
+# Processing tests (no API keys required)
+python tests/test_processing.py
+
+# Or use pytest
+pytest tests/
 ```
 
 Tests run without API keys (they skip network calls gracefully).
 
-### 4. Process a Document
+### 4. Start the API Server
+
+**Windows (PowerShell):**
+```powershell
+.\scripts\run_local.ps1
+```
+
+**Or manually:**
+```powershell
+powershell -c "$env:PYTHONPATH='$PWD'; uvicorn app:app --reload"
+```
+
+**Unix/Linux/Mac:**
+```bash
+PYTHONPATH=$PWD uvicorn app:app --reload
+```
+
+Access the API at:
+- **Interactive docs**: http://localhost:8000/docs
+- **Health check**: http://localhost:8000/health
+- **Metrics**: http://localhost:8000/api/v1/metrics
+
+### 5. Process Documents via CLI
 
 ```bash
 # Single document
-python m1_3_document_processing.py --process example_data.txt --index production-rag
+python -m src.m1_3_document_processing.module --process data/example/example_data.txt --index production-rag
 
 # Batch processing
-python m1_3_document_processing.py --process-batch docs/ --index production-rag
+python -m src.m1_3_document_processing.module --process-batch docs/ --index production-rag --chunker semantic
+
+# Try different chunking strategies
+python -m src.m1_3_document_processing.module --process data/example/example_data.txt --chunker fixed --chunk-size 256
+python -m src.m1_3_document_processing.module --process data/example/example_data.txt --chunker paragraph
 ```
 
-### 5. Explore the Notebook
-
-Open `M1_3_Document_Processing_Pipeline.ipynb` to see each pipeline stage in action:
+### 6. Process Documents via API
 
 ```bash
-jupyter notebook M1_3_Document_Processing_Pipeline.ipynb
+# Ingest a document
+curl -X POST "http://localhost:8000/api/v1/ingest" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "file_path": "data/example/example_data.txt",
+    "chunker": "semantic",
+    "chunk_size": 512,
+    "index_name": "production-rag"
+  }'
+
+# Check metrics
+curl http://localhost:8000/api/v1/metrics
 ```
+
+### 7. Explore the Notebook
+
+```bash
+# Set PYTHONPATH and start Jupyter
+export PYTHONPATH=$PWD  # Unix/Mac
+# or
+$env:PYTHONPATH="$PWD"  # Windows PowerShell
+
+jupyter notebook notebooks/M1_3_Document_Processing_Pipeline.ipynb
+```
+
+---
+
+## Project Structure
+
+```
+.
+├── app.py                          # FastAPI application entry point
+├── requirements.txt                # Python dependencies
+├── .env.example                    # Environment variable template
+├── .gitignore                      # Git ignore patterns
+├── LICENSE                         # MIT License
+├── README.md                       # This file
+│
+├── src/
+│   └── m1_3_document_processing/   # Main package
+│       ├── __init__.py             # Package init with learning arc
+│       ├── config.py               # Configuration and client initialization
+│       ├── module.py               # Core processing pipeline
+│       └── router.py               # FastAPI routes
+│
+├── data/
+│   └── example/
+│       └── example_data.txt        # Sample document for testing
+│
+├── notebooks/
+│   └── M1_3_Document_Processing_Pipeline.ipynb  # Interactive tutorial
+│
+├── tests/
+│   ├── test_smoke.py               # FastAPI endpoint tests
+│   └── test_processing.py          # Processing pipeline tests
+│
+└── scripts/
+    └── run_local.ps1               # PowerShell script to run locally
+```
+
+---
 
 ## Pipeline Architecture
 
@@ -98,11 +212,108 @@ jupyter notebook M1_3_Document_Processing_Pipeline.ipynb
 └─────────────┘  → Searchable index
 ```
 
+---
+
+## API Reference
+
+### Endpoints
+
+#### `GET /health`
+Health check for the service.
+
+**Response:**
+```json
+{
+  "status": "ok",
+  "service": "document-processing-api"
+}
+```
+
+#### `GET /api/v1/health`
+Module-specific health check.
+
+**Response:**
+```json
+{
+  "status": "ok",
+  "module": "m1_3_document_processing",
+  "version": "1.0.0"
+}
+```
+
+#### `POST /api/v1/ingest`
+Process and ingest documents.
+
+**Request:**
+```json
+{
+  "file_path": "data/example/example_data.txt",
+  "chunker": "semantic",
+  "chunk_size": 512,
+  "index_name": "production-rag"
+}
+```
+
+**Response:**
+```json
+{
+  "status": "success",
+  "message": "Processed 1 document(s) into 15 chunks",
+  "chunks_processed": 15,
+  "documents_processed": 1,
+  "skipped": false
+}
+```
+
+If API keys are not configured, embedding/storage is skipped:
+```json
+{
+  "status": "success",
+  "message": "Processed 1 document(s) into 15 chunks (embedding/storage skipped)",
+  "chunks_processed": 15,
+  "documents_processed": 1,
+  "skipped": true,
+  "skip_reason": "⚠️ API keys not configured"
+}
+```
+
+#### `POST /api/v1/query`
+Query documents (stub for M1.4).
+
+**Response:**
+```json
+{
+  "status": "not_implemented",
+  "message": "Query functionality will be implemented in M1.4",
+  "results": []
+}
+```
+
+#### `GET /api/v1/metrics`
+Get pipeline metrics.
+
+**Response:**
+```json
+{
+  "status": "ok",
+  "total_documents_processed": 5,
+  "total_chunks_generated": 87,
+  "api_keys_configured": {
+    "openai": true,
+    "pinecone": true
+  }
+}
+```
+
+---
+
 ## Chunking Strategies
 
 ### Fixed-Size Chunking
 
 ```python
+from src.m1_3_document_processing import FixedSizeChunker
+
 chunker = FixedSizeChunker(chunk_size=512, overlap=50)
 chunks = chunker.chunk(text)
 ```
@@ -113,6 +324,8 @@ chunks = chunker.chunk(text)
 ### Semantic Chunking
 
 ```python
+from src.m1_3_document_processing import SemanticChunker
+
 chunker = SemanticChunker(chunk_size=512, overlap=50)
 chunks = chunker.chunk(text)
 ```
@@ -123,12 +336,16 @@ chunks = chunker.chunk(text)
 ### Paragraph Chunking
 
 ```python
+from src.m1_3_document_processing import ParagraphChunker
+
 chunker = ParagraphChunker(max_chunk_size=1024)
 chunks = chunker.chunk(text)
 ```
 
 **Pros**: Preserves document structure
 **Cons**: Requires clear paragraph boundaries
+
+---
 
 ## Trade-offs & Costs
 
@@ -151,6 +368,8 @@ chunks = chunker.chunk(text)
 - **Cross-document reasoning**: No knowledge graph or entity linking
 - **Real-time updates**: Reprocessing takes time; not suitable for live docs
 
+---
+
 ## Common Failures & Fixes
 
 | Failure | Cause | Fix |
@@ -161,6 +380,8 @@ chunks = chunker.chunk(text)
 | **Garbled tables** | PDF tables become unstructured text | Use `pdfplumber` or Camelot for table extraction |
 | **Duplicate chunks** | Reprocessing same doc | Check `content_hash` before upserting |
 | **Metadata too large** | 50KB metadata exceeds Pinecone limit | `_trim_metadata()` removes large fields |
+
+---
 
 ## When NOT to Build This
 
@@ -181,6 +402,8 @@ chunks = chunker.chunk(text)
 - You need **domain-specific chunking** (e.g., legal contracts by clause)
 - You want **full control** over metadata and storage
 
+---
+
 ## Decision Card
 
 **Input**: 100 PDF research papers (avg 20 pages)
@@ -195,13 +418,15 @@ chunks = chunker.chunk(text)
 **Goal**: General Q&A
 **Best Choice**: Long-context embeddings (entire article context)
 
+---
+
 ## CLI Reference
 
 ### Process Single Document
 
 ```bash
-python m1_3_document_processing.py \
-  --process path/to/document.pdf \
+python -m src.m1_3_document_processing.module \
+  --process data/example/example_data.txt \
   --index production-rag \
   --chunker semantic \
   --chunk-size 512
@@ -210,7 +435,7 @@ python m1_3_document_processing.py \
 ### Process Batch
 
 ```bash
-python m1_3_document_processing.py \
+python -m src.m1_3_document_processing.module \
   --process-batch docs/ \
   --index production-rag \
   --chunker paragraph
@@ -224,24 +449,71 @@ python m1_3_document_processing.py \
 - `--chunker <type>`: Chunking strategy: `fixed`, `semantic`, or `paragraph` (default: `semantic`)
 - `--chunk-size <int>`: Target chunk size in characters (default: 512)
 
-## Project Structure
+---
 
+## Windows Quick Start
+
+For Windows users, use PowerShell commands:
+
+### Run API Server
+```powershell
+.\scripts\run_local.ps1
 ```
-.
-├── m1_3_document_processing.py   # Main pipeline implementation
-├── config.py                     # Configuration & client initialization
-├── requirements.txt              # Dependencies
-├── .env.example                  # Environment variable template
-├── example_data.txt              # Sample document for testing
-├── tests_processing.py           # Smoke tests (no API keys required)
-├── M1_3_Document_Processing_Pipeline.ipynb  # Interactive tutorial
-└── README.md                     # This file
+
+### Process a Document
+```powershell
+$env:PYTHONPATH="$PWD"
+python -m src.m1_3_document_processing.module --process data/example/example_data.txt
 ```
+
+### Run Tests
+```powershell
+$env:PYTHONPATH="$PWD"
+pytest tests/
+```
+
+---
+
+## Development
+
+### Running Tests
+
+```bash
+# All tests
+pytest tests/ -v
+
+# Smoke tests only
+pytest tests/test_smoke.py -v
+
+# Processing tests only
+pytest tests/test_processing.py -v
+```
+
+### Code Style
+
+The codebase follows:
+- **Google-style docstrings** for all public functions/classes
+- **Type hints** for function signatures
+- **Intent comments** for non-obvious logic
+- **Logging** at INFO and ERROR levels
+
+---
 
 ## Next Module
 
-**M1.4 — Vector Stores & Retrieval**: Learn to query your Pinecone index, implement hybrid search (semantic + keyword), and handle retrieval failures.
+**M1.4 — Query Pipeline & Response Generation**: Learn to query your Pinecone index, implement hybrid search (semantic + keyword), and handle retrieval failures.
+
+---
 
 ## License
 
-Educational use only. See course materials for full terms.
+MIT License - see [LICENSE](LICENSE) for details.
+
+---
+
+## Resources
+
+- [OpenAI Embeddings Pricing](https://openai.com/pricing)
+- [Pinecone Documentation](https://docs.pinecone.io/)
+- [PyMuPDF (fitz) Docs](https://pymupdf.readthedocs.io/)
+- [FastAPI Documentation](https://fastapi.tiangolo.com/)
