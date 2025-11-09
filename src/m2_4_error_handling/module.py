@@ -44,26 +44,66 @@ class RetryStrategy:
         self.retryable_exceptions = retryable_exceptions
 
     def calculate_delay(self, attempt: int) -> float:
-        """Calculate delay with exponential backoff and optional jitter."""
+        """
+        Calculate delay with exponential backoff and optional jitter.
+
+        Exponential backoff: delay = initial_delay * (base ^ attempt)
+        Example with base=2, initial=1s: 1s → 2s → 4s → 8s
+
+        Jitter band: Random multiplier [0.75, 1.25] prevents thundering herd.
+        Without jitter, all clients retry simultaneously, amplifying load.
+        With jitter, retries spread across ±25% window, reducing collisions.
+
+        Args:
+            attempt: Current retry attempt number (0-indexed).
+
+        Returns:
+            Calculated delay in seconds with jitter applied.
+        """
+        # Exponential backoff: delay grows exponentially with attempts
         delay = self.initial_delay * (self.exponential_base ** attempt)
+
         if self.jitter:
-            # Add ±25% jitter to prevent synchronized retries
+            # Add ±25% jitter to prevent synchronized retries (thundering herd)
+            # Range: [0.75 * delay, 1.25 * delay]
             delay *= (0.75 + 0.5 * random.random())
         return delay
 
     def is_retryable(self, exception: Exception) -> bool:
-        """Determine if an exception should trigger a retry."""
+        """
+        Determine if an exception should trigger a retry.
+
+        Retryable errors: Transient failures that may succeed on retry
+        - 5xx: Server errors (503 Service Unavailable, 502 Bad Gateway, etc.)
+        - 429: Rate limiting (need to wait before retry)
+        - Network errors: ConnectionError, TimeoutError
+
+        Non-retryable errors: Client mistakes that won't change on retry
+        - 4xx: Bad request (400), Unauthorized (401), Not Found (404), etc.
+        - Retrying these wastes time, money, and API quota
+
+        Critical insight: Distinguish between "service down" (retry) vs
+        "bad request" (fail fast) to avoid retry storms and wasted costs.
+
+        Args:
+            exception: The exception to check for retry eligibility.
+
+        Returns:
+            True if exception should be retried, False to fail immediately.
+        """
         # Check for retryable HTTP status codes if available
         if hasattr(exception, 'status_code'):
             status = exception.status_code
             # Retry on 5xx (server errors) and 429 (rate limit)
+            # These are transient - service may recover
             if status >= 500 or status == 429:
                 return True
             # Don't retry 4xx (client errors, except 429)
+            # These indicate bad request - retrying won't help
             if 400 <= status < 500:
                 return False
 
-        # Check exception type
+        # Check exception type for network-level failures
         return isinstance(exception, self.retryable_exceptions)
 
     def execute(self, func: Callable, *args, **kwargs) -> Any:
@@ -198,29 +238,56 @@ class CircuitBreaker:
         return elapsed >= self.recovery_timeout
 
     def _on_success(self):
-        """Handle successful execution."""
+        """
+        Handle successful execution and manage circuit state transitions.
+
+        State transitions on success:
+        - HALF_OPEN → CLOSED: Recovery test passed, resume normal operation
+        - CLOSED: Reset failure count (prevents false positives from isolated failures)
+
+        Threshold tuning: If circuit opens too often (false positives), increase
+        failure_threshold. If it stays open too long, decrease recovery_timeout.
+        """
         with self._lock:
             if self.state == CircuitState.HALF_OPEN:
+                # Recovery test successful - circuit is healthy again
                 logger.info("✓ Circuit breaker CLOSED (recovery successful)")
                 self.state = CircuitState.CLOSED
                 self.failure_count = 0
             elif self.state == CircuitState.CLOSED:
-                # Reset failure count on success
+                # Reset failure count on success to prevent isolated failures
+                # from accumulating and triggering false circuit opens
                 self.failure_count = 0
 
     def _on_failure(self):
-        """Handle failed execution."""
+        """
+        Handle failed execution and manage circuit state transitions.
+
+        State transitions on failure:
+        - CLOSED → OPEN: When failure_count >= failure_threshold
+        - HALF_OPEN → OPEN: Recovery test failed, service still down
+
+        Failure threshold rationale:
+        - Too low (e.g., 2): Circuit opens on transient blips, causing false positives
+        - Too high (e.g., 20): Takes too long to detect outages, wasting retries
+        - Recommended: 5-10 for production, tune based on monitoring data
+
+        Critical insight: Circuit breaker prevents retry storms during outages.
+        Without it, all clients retry simultaneously, amplifying the problem.
+        """
         with self._lock:
             self.failure_count += 1
             self.last_failure_time = datetime.now()
 
             if self.state == CircuitState.HALF_OPEN:
                 # Failed during recovery test - go back to OPEN
+                # Service not recovered yet, wait another recovery_timeout
                 logger.error("✗ Circuit breaker reopened (recovery test failed)")
                 self.state = CircuitState.OPEN
 
             elif self.failure_count >= self.failure_threshold:
                 # Threshold exceeded - open the circuit
+                # Reject all requests immediately, no more retries
                 logger.error(f"✗ Circuit breaker OPEN (threshold {self.failure_threshold} exceeded)")
                 self.state = CircuitState.OPEN
 
@@ -274,8 +341,26 @@ class GracefulFallbacks:
         )
 
     def get_last_known_good(self, key: str) -> Optional[tuple]:
-        """Get last successful response and its timestamp."""
+        """
+        Get last successful response with age annotation.
+
+        Last-known-good (LKG) pattern: Serve stale data during outages.
+        Better to show 5-minute-old data than an error message.
+
+        Age annotation rationale: Users should know data might be stale.
+        Example: "Answer: ... [Note: Using cached response from 120s ago]"
+
+        Trade-off: Stale data vs no data. For most RAG use cases, slightly
+        outdated information is better than "service unavailable" errors.
+
+        Args:
+            key: The cache key to lookup.
+
+        Returns:
+            Tuple of (cached_value, age_in_seconds) or None if not cached.
+        """
         if key in self.cache and key in self.last_successful:
+            # Calculate age in seconds for transparency
             age = (datetime.now() - self.last_successful[key]).total_seconds()
             return self.cache[key], age
         return None
@@ -302,18 +387,36 @@ class RequestQueue:
 
     def enqueue(self, item: Any) -> bool:
         """
-        Add item to queue. Returns False if queue is full.
+        Add item to queue with backpressure rejection if full.
 
-        Note: deque with maxlen automatically drops oldest items,
-        but we track rejections for monitoring.
+        Queue boundedness rationale:
+        - Unbounded queues consume all memory during traffic spikes
+        - System crashes harder than if we had rejected requests
+        - Bounded queue prevents memory exhaustion (OOM killer)
+
+        Rejection strategy: Fail fast when queue is full
+        - User sees "system busy" message instead of timeout
+        - Better UX: immediate feedback vs hanging then crashing
+        - Protects system: reject some requests vs crash and reject all
+
+        Tuning: Set max_size based on available memory and processing rate.
+        Example: 1000 items * 1KB each = ~1MB queue memory footprint.
+
+        Args:
+            item: The item to enqueue.
+
+        Returns:
+            True if enqueued successfully, False if queue full (backpressure).
         """
         with self._lock:
             current_size = len(self.queue)
             if current_size >= self.max_size:
+                # Queue full - apply backpressure by rejecting new requests
                 self.rejected_count += 1
                 logger.warning(f"⚠ Queue full ({self.max_size}), request rejected")
                 return False
 
+            # Add to queue
             self.queue.append(item)
             logger.debug(f"+ Queued item (queue size: {len(self.queue)})")
             return True

@@ -122,11 +122,20 @@ def get_queue_config() -> dict:
     }
 
 
-def validate_config() -> bool:
-    """Validate configuration values."""
+def validate_config(require_api_key: bool = False) -> bool:
+    """
+    Validate configuration values.
+
+    Args:
+        require_api_key: If True, require OPENAI_API_KEY to be set. Default False for demos.
+
+    Returns:
+        True if configuration is valid, False otherwise.
+    """
     errors = []
 
-    if not OPENAI_API_KEY:
+    # API key is optional for demos/simulation mode
+    if require_api_key and not OPENAI_API_KEY:
         errors.append("OPENAI_API_KEY not set")
 
     if RETRY_MAX_ATTEMPTS < 0:

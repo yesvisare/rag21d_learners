@@ -2,13 +2,14 @@
 Tests for M2.4 Error Handling & Reliability
 
 Smoke tests to verify all resilience patterns work correctly.
-Run with: pytest tests_resilience.py -v
+Run with: pytest tests/test_resilience.py -v
+Or from project root: PYTHONPATH=. pytest tests/ -v
 """
 
 import pytest
 import time
 import random
-from m2_4_resilience import (
+from src.m2_4_error_handling import (
     RetryStrategy, with_retry,
     CircuitBreaker, CircuitState, CircuitBreakerOpenError,
     GracefulFallbacks,

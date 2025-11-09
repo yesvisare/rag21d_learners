@@ -1,13 +1,18 @@
 # M2.4 — Error Handling & Reliability
 # Core dependencies for resilience patterns in RAG systems
 
+# FastAPI and server
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+pydantic==2.5.0
+
 # Optional: Advanced retry library (we implement our own, but this is useful for reference)
 tenacity==8.5.0
 
 # Environment configuration
 python-dotenv==1.0.1
 
-# OpenAI API client
+# OpenAI API client (optional - demos work without)
 openai==1.46.0
 
 # Utilities
@@ -23,3 +28,4 @@ ipykernel==6.27.1
 pytest==7.4.3
 pytest-asyncio==0.21.1
 pytest-timeout==2.2.0
+httpx==0.25.2  # For FastAPI TestClient
